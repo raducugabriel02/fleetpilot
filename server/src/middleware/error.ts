@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
+import { Prisma } from '@prisma/client';
 import { ZodError } from 'zod';
 import type { ApiError } from '@fleetpilot/shared';
 
@@ -26,6 +27,13 @@ export function errorHandler(
 ): void {
   if (err instanceof HttpError) {
     res.status(err.status).json({ error: { message: err.message, code: err.code } });
+    return;
+  }
+  // P2002 = unique constraint: transformăm eroarea criptică Prisma într-un 409 clar
+  if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+    res.status(409).json({
+      error: { message: 'Există deja o înregistrare cu aceste date', code: 'DUPLICATE' },
+    });
     return;
   }
   if (err instanceof ZodError) {
