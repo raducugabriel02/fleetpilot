@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: fleetpilot
+      POSTGRES_PASSWORD: fleetpilot
+      POSTGRES_DB: fleetpilot
+    ports:
+      # 5433 extern, ca să nu intre în conflict cu PostgreSQL-ul instalat local pe 5432
+      - '5433:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
