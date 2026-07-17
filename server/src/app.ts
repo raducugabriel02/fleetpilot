@@ -5,6 +5,7 @@ import { env } from './lib/env';
 import { errorHandler, notFoundHandler } from './middleware/error';
 import { authRouter } from './routes/auth';
 import { healthRouter } from './routes/health';
+import { vehiclesRouter } from './routes/vehicles';
 
 export function createApp(): express.Express {
   const app = express();
@@ -16,6 +17,7 @@ export function createApp(): express.Express {
 
   app.use('/api/health', healthRouter);
   app.use('/api/auth', authRouter);
+  app.use('/api/vehicles', vehiclesRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

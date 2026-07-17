@@ -17,6 +17,14 @@ declare global {
   }
 }
 
+// pentru controllere montate după requireAuth: întoarce contextul garantat, fără `!`
+export function getAuth(req: Request): AuthContext {
+  if (!req.auth) {
+    throw new HttpError(401, 'Neautentificat', 'UNAUTHENTICATED');
+  }
+  return req.auth;
+}
+
 export function requireAuth(req: Request, _res: Response, next: NextFunction): void {
   const header = req.headers.authorization;
   const token = header?.startsWith('Bearer ') ? header.slice('Bearer '.length) : undefined;
