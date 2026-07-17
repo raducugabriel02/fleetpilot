@@ -3,6 +3,9 @@ import { z } from 'zod';
 export const roleSchema = z.enum(['ADMIN', 'DISPATCHER', 'DRIVER']);
 export type Role = z.infer<typeof roleSchema>;
 
+// bcrypt ignoră tot ce depășește 72 de bytes, deci limităm explicit
+export const passwordSchema = z.string().min(8, 'Parola trebuie să aibă minim 8 caractere').max(72);
+
 export const registerSchema = z.object({
   companyName: z.string().trim().min(2, 'Numele firmei e prea scurt').max(100),
   cui: z
@@ -12,8 +15,7 @@ export const registerSchema = z.object({
     .optional(),
   name: z.string().trim().min(2, 'Numele e prea scurt').max(100),
   email: z.email('Email invalid'),
-  // bcrypt ignoră tot ce depășește 72 de bytes, deci limităm explicit
-  password: z.string().min(8, 'Parola trebuie să aibă minim 8 caractere').max(72),
+  password: passwordSchema,
 });
 
 export const loginSchema = z.object({

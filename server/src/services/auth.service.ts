@@ -4,10 +4,9 @@ import type { Company, Prisma, User } from '@prisma/client';
 import type { AuthUser, LoginInput, RegisterInput } from '@fleetpilot/shared';
 import { env } from '../lib/env';
 import { signAccessToken } from '../lib/jwt';
+import { BCRYPT_ROUNDS, hashPassword } from '../lib/password';
 import { prisma } from '../lib/prisma';
 import { HttpError } from '../middleware/error';
-
-const BCRYPT_ROUNDS = 12;
 
 export interface AuthTokens {
   accessToken: string;
@@ -67,7 +66,7 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
   if (existing) {
     throw new HttpError(409, 'Există deja un cont cu acest email', 'EMAIL_TAKEN');
   }
-  const passwordHash = await bcrypt.hash(input.password, BCRYPT_ROUNDS);
+  const passwordHash = await hashPassword(input.password);
   // create imbricat = o singură tranzacție: nu rămânem cu firmă fără admin
   const user = await prisma.user.create({
     data: {

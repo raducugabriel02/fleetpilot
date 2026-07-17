@@ -7,6 +7,7 @@ import type {
   VehicleDto,
 } from '@fleetpilot/shared';
 import { prisma } from '../lib/prisma';
+import { isPrismaError } from '../lib/prisma-errors';
 import { HttpError } from '../middleware/error';
 
 // Prisma Decimal și Date nu se serializează cum vrem în JSON; DTO-ul e contractul cu clientul
@@ -22,10 +23,6 @@ function toVehicleDto(vehicle: Vehicle): VehicleDto {
     rcaExpiresAt: vehicle.rcaExpiresAt?.toISOString() ?? null,
     vignetteExpiresAt: vehicle.vignetteExpiresAt?.toISOString() ?? null,
   };
-}
-
-function isPrismaError(err: unknown, code: 'P2002' | 'P2025'): boolean {
-  return err instanceof Prisma.PrismaClientKnownRequestError && err.code === code;
 }
 
 async function findOwnedVehicle(companyId: string, id: string): Promise<Vehicle> {
