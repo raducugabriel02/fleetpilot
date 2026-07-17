@@ -4,14 +4,20 @@
       {
         "matcher": "Edit|Write",
         "hooks": [
-          { "type": "command", "command": "npx prettier --write \"$CLAUDE_FILE_PATHS\" 2>/dev/null || true" }
+          {
+            "type": "command",
+            "command": "npx prettier --write \"$CLAUDE_FILE_PATHS\" 2>/dev/null || true"
+          }
         ]
       }
     ],
     "Stop": [
       {
         "hooks": [
-          { "type": "command", "command": "if [ -f server/tsconfig.json ]; then (cd server && npx tsc --noEmit) && (cd ../client && npx tsc --noEmit); fi" }
+          {
+            "type": "command",
+            "command": "if [ -f server/tsconfig.json ]; then (cd server && npx tsc --noEmit) && (cd ../client && npx tsc --noEmit); fi"
+          }
         ]
       }
     ]

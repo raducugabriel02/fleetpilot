@@ -2,7 +2,9 @@
 name: new-endpoint
 description: Procedura standard pentru adăugarea unui endpoint nou în API
 ---
+
 Pentru orice endpoint nou, în ordinea asta:
+
 1. Schema Zod în shared/schemas/ (refolosită de client și server)
 2. Service cu logica de business (primește companyId, îl aplică în TOATE query-urile)
 3. Controller subțire: parse Zod → apel service → răspuns

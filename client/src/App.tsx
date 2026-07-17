@@ -17,8 +17,7 @@ export function App() {
         <h1 className="text-3xl font-bold">FleetPilot</h1>
         <p className="mt-2 text-slate-400">Dispecerat AI pentru transport marfă</p>
         <p className="mt-6 text-sm">
-          API:{' '}
-          {status === 'loading' && <span className="text-amber-400">se verifică…</span>}
+          API: {status === 'loading' && <span className="text-amber-400">se verifică…</span>}
           {status === 'ok' && <span className="text-emerald-400">conectat ✓</span>}
           {status === 'error' && <span className="text-red-400">indisponibil ✗</span>}
         </p>

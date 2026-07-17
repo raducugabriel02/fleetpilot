@@ -39,7 +39,7 @@ Firmele mici de transport din România lucrează haotic: comenzile vin pe telefo
 
 ## Agentul AI — „Dispecerul"
 
-Primește cereri în limbaj natural (română) de tip *„transport 4 paleți Oltenița → Constanța joi dimineața, client Agrofrig"*, și:
+Primește cereri în limbaj natural (română) de tip _„transport 4 paleți Oltenița → Constanța joi dimineața, client Agrofrig"_, și:
 
 1. **Extrage** datele structurate (origine, destinație, marfă, cantitate, fereastră de timp, client)
 2. **Verifică** prin tool-uri: vehicule cu capacitate + disponibile în fereastră, șoferi liberi, distanța/durata rutei via OSRM
