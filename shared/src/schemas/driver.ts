@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { idParamSchema } from './api';
+import { idParamSchema, phoneSchema } from './api';
 import { passwordSchema } from './auth';
 
 export const licenseCategorySchema = z.enum(['B', 'BE', 'C1', 'C1E', 'C', 'CE']);
@@ -12,13 +12,6 @@ const licenseCategoriesSchema = z
   .array(licenseCategorySchema)
   .min(1, 'Cel puțin o categorie de permis')
   .refine((values) => new Set(values).size === values.length, 'Categorii duplicate');
-
-// normalizăm separatorii ("0722 123 456" → "0722123456"), apoi validăm prefixul românesc
-const phoneSchema = z
-  .string()
-  .trim()
-  .transform((value) => value.replace(/[\s.\-()]+/g, ''))
-  .pipe(z.string().regex(/^(\+40|0)\d{9}$/, 'Telefon invalid (ex: 0722 123 456)'));
 
 export const createDriverSchema = z.object({
   name: z.string().trim().min(2, 'Numele e prea scurt').max(100),

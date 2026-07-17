@@ -4,6 +4,7 @@ import express from 'express';
 import { env } from './lib/env';
 import { errorHandler, notFoundHandler } from './middleware/error';
 import { authRouter } from './routes/auth';
+import { clientsRouter } from './routes/clients';
 import { driversRouter } from './routes/drivers';
 import { healthRouter } from './routes/health';
 import { vehiclesRouter } from './routes/vehicles';
@@ -18,6 +19,7 @@ export function createApp(): express.Express {
 
   app.use('/api/health', healthRouter);
   app.use('/api/auth', authRouter);
+  app.use('/api/clients', clientsRouter);
   app.use('/api/drivers', driversRouter);
   app.use('/api/vehicles', vehiclesRouter);
 
