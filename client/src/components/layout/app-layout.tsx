@@ -24,10 +24,10 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/vehicles', label: 'Vehicule', icon: Truck },
-  { to: '/drivers', label: 'Șoferi', icon: Users },
-  { to: '/clients', label: 'Clienți', icon: Building2 },
+  { to: '/app', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/app/vehicles', label: 'Vehicule', icon: Truck },
+  { to: '/app/drivers', label: 'Șoferi', icon: Users },
+  { to: '/app/clients', label: 'Clienți', icon: Building2 },
 ];
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
@@ -37,7 +37,7 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
         <NavLink
           key={to}
           to={to}
-          end={to === '/'}
+          end={to === '/app'}
           onClick={onNavigate}
           className={({ isActive }) =>
             cn(

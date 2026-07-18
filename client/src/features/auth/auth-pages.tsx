@@ -39,7 +39,7 @@ function AuthShell({
   const location = useLocation();
   if (status === 'authenticated') {
     const from = (location.state as { from?: string } | null)?.from;
-    return <Navigate to={from ?? '/'} replace />;
+    return <Navigate to={from ?? '/app'} replace />;
   }
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-6 p-4">
@@ -76,7 +76,7 @@ export function LoginPage() {
     try {
       await login(input);
       const from = (location.state as { from?: string } | null)?.from;
-      navigate(from ?? '/', { replace: true });
+      navigate(from ?? '/app', { replace: true });
     } catch (err) {
       toast.error(errorMessage(err));
     }
@@ -144,7 +144,7 @@ export function RegisterPage() {
     try {
       // CUI-ul e opțional: string gol înseamnă „fără CUI", nu CUI invalid
       await register({ ...input, cui: input.cui || undefined });
-      navigate('/', { replace: true });
+      navigate('/app', { replace: true });
     } catch (err) {
       toast.error(errorMessage(err));
     }

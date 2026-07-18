@@ -107,7 +107,7 @@ export function DashboardPage() {
           icon={Truck}
           value={available}
           detail={`din ${vehicles?.length ?? 0} în flotă`}
-          to="/vehicles"
+          to="/app/vehicles"
           loading={vehiclesQuery.isPending}
         />
         <KpiCard
@@ -115,7 +115,7 @@ export function DashboardPage() {
           icon={Users}
           value={activeDrivers}
           detail={`din ${driversQuery.data?.length ?? 0} înregistrați`}
-          to="/drivers"
+          to="/app/drivers"
           loading={driversQuery.isPending}
         />
         <KpiCard
@@ -123,7 +123,7 @@ export function DashboardPage() {
           icon={Building2}
           value={clientsQuery.data?.length}
           detail="firme partenere"
-          to="/clients"
+          to="/app/clients"
           loading={clientsQuery.isPending}
         />
         <Card className="border-dashed">
@@ -145,7 +145,7 @@ export function DashboardPage() {
             Documente care expiră
           </CardTitle>
           <Link
-            to="/vehicles"
+            to="/app/vehicles"
             className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
           >
             Toate vehiculele <ArrowRight className="size-3" />
