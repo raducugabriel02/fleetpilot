@@ -6,7 +6,7 @@ import {
   listTripsQuerySchema,
   updateTripSchema,
 } from '@fleetpilot/shared';
-import type { TripDto } from '@fleetpilot/shared';
+import type { TripDetailDto, TripDto } from '@fleetpilot/shared';
 import { getAuth } from '../middleware/auth';
 import * as tripService from '../services/trip.service';
 
@@ -16,10 +16,16 @@ export async function list(req: Request, res: Response<TripDto[]>): Promise<void
   res.json(await tripService.listTrips(companyId, query));
 }
 
-export async function getById(req: Request, res: Response<TripDto>): Promise<void> {
+export async function getById(req: Request, res: Response<TripDetailDto>): Promise<void> {
   const { companyId } = getAuth(req);
   const { id } = idParamSchema.parse(req.params);
   res.json(await tripService.getTrip(companyId, id));
+}
+
+export async function recalcRoute(req: Request, res: Response<TripDetailDto>): Promise<void> {
+  const { companyId } = getAuth(req);
+  const { id } = idParamSchema.parse(req.params);
+  res.json(await tripService.recalculateRoute(companyId, id));
 }
 
 export async function create(req: Request, res: Response<TripDto>): Promise<void> {

@@ -77,6 +77,13 @@ export const listTripsQuerySchema = z
     path: ['to'],
   });
 
+// geometria rutei, exact cum o dă OSRM (GeoJSON LineString) — o consumă harta și simulatorul GPS
+export const routeGeometrySchema = z.object({
+  type: z.literal('LineString'),
+  coordinates: z.array(z.tuple([z.number(), z.number()])).min(2),
+});
+export type RouteGeometry = z.infer<typeof routeGeometrySchema>;
+
 export const tripSchema = z.object({
   id: z.string(),
   client: z.object({ id: z.string(), name: z.string() }),
@@ -84,6 +91,11 @@ export const tripSchema = z.object({
   driver: z.object({ id: z.string(), name: z.string() }).nullable(),
   originAddress: z.string(),
   destAddress: z.string(),
+  // null = geocodarea n-a reușit (serviciu picat sau adresă negăsită); UI-ul arată „—"
+  originLat: z.number().nullable(),
+  originLng: z.number().nullable(),
+  destLat: z.number().nullable(),
+  destLng: z.number().nullable(),
   cargoDescription: z.string(),
   pallets: z.number().int().nullable(),
   weightTons: z.number().nullable(),
@@ -97,8 +109,14 @@ export const tripSchema = z.object({
   createdAt: z.iso.datetime(),
 });
 
+// geometria doar pe detaliu: e mare (sute de puncte) și listările n-au nevoie de ea
+export const tripDetailSchema = tripSchema.extend({
+  routeGeometry: routeGeometrySchema.nullable(),
+});
+
 export type CreateTripInput = z.infer<typeof createTripSchema>;
 export type UpdateTripInput = z.infer<typeof updateTripSchema>;
 export type AssignTripInput = z.infer<typeof assignTripSchema>;
 export type ListTripsQuery = z.infer<typeof listTripsQuerySchema>;
 export type TripDto = z.infer<typeof tripSchema>;
+export type TripDetailDto = z.infer<typeof tripDetailSchema>;

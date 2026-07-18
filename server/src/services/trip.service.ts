@@ -1,14 +1,18 @@
 import { Prisma } from '@prisma/client';
+import { routeGeometrySchema } from '@fleetpilot/shared';
 import type {
   AssignTripInput,
   CreateTripInput,
   ListTripsQuery,
+  TripDetailDto,
   TripDto,
   UpdateTripInput,
 } from '@fleetpilot/shared';
 import { prisma } from '../lib/prisma';
 import { isPrismaError } from '../lib/prisma-errors';
 import { HttpError } from '../middleware/error';
+import { resolveTripRoute } from './routing.service';
+import type { TripRouteFields } from './routing.service';
 
 const tripInclude = {
   client: true,
@@ -17,8 +21,10 @@ const tripInclude = {
 } satisfies Prisma.TripInclude;
 
 type TripWithRelations = Prisma.TripGetPayload<{ include: typeof tripInclude }>;
+// listările nu au nevoie de geometrie (sute de puncte per cursă), deci nici n-o cerem din DB
+type TripListItem = Omit<TripWithRelations, 'routeGeometry'>;
 
-function toTripDto(trip: TripWithRelations): TripDto {
+function toTripDto(trip: TripListItem): TripDto {
   return {
     id: trip.id,
     client: { id: trip.client.id, name: trip.client.name },
@@ -26,6 +32,10 @@ function toTripDto(trip: TripWithRelations): TripDto {
     driver: trip.driver ? { id: trip.driver.id, name: trip.driver.user.name } : null,
     originAddress: trip.originAddress,
     destAddress: trip.destAddress,
+    originLat: trip.originLat,
+    originLng: trip.originLng,
+    destLat: trip.destLat,
+    destLng: trip.destLng,
     cargoDescription: trip.cargoDescription,
     pallets: trip.pallets,
     weightTons: trip.weightTons?.toNumber() ?? null,
@@ -38,6 +48,17 @@ function toTripDto(trip: TripWithRelations): TripDto {
     completedAt: trip.completedAt?.toISOString() ?? null,
     createdAt: trip.createdAt.toISOString(),
   };
+}
+
+function toTripDetailDto(trip: TripWithRelations): TripDetailDto {
+  // coloana e Json; safeParse în loc de cast ca un rând corupt să devină null, nu crash
+  const geometry = routeGeometrySchema.safeParse(trip.routeGeometry);
+  return { ...toTripDto(trip), routeGeometry: geometry.success ? geometry.data : null };
+}
+
+// Json nullable în Prisma nu acceptă null direct — DbNull e NULL-ul de coloană
+function toRouteData(route: TripRouteFields) {
+  return { ...route, routeGeometry: route.routeGeometry ?? Prisma.DbNull };
 }
 
 async function findOwnedTrip(companyId: string, id: string): Promise<TripWithRelations> {
@@ -87,13 +108,14 @@ export async function listTrips(companyId: string, query: ListTripsQuery): Promi
       ...(query.to ? { windowStart: { lte: query.to } } : {}),
     },
     include: tripInclude,
+    omit: { routeGeometry: true },
     orderBy: { windowStart: 'desc' },
   });
   return trips.map(toTripDto);
 }
 
-export async function getTrip(companyId: string, id: string): Promise<TripDto> {
-  return toTripDto(await findOwnedTrip(companyId, id));
+export async function getTrip(companyId: string, id: string): Promise<TripDetailDto> {
+  return toTripDetailDto(await findOwnedTrip(companyId, id));
 }
 
 export async function createTrip(
@@ -102,9 +124,12 @@ export async function createTrip(
   input: CreateTripInput,
 ): Promise<TripDto> {
   await assertOwnedClient(prisma, companyId, input.clientId);
+  // best-effort: dacă Nominatim/OSRM nu răspund, cursa se creează cu ruta null
+  // și se completează ulterior prin POST /:id/route
+  const route = await resolveTripRoute(input.originAddress, input.destAddress);
   try {
     const trip = await prisma.trip.create({
-      data: { companyId, createdById, ...input },
+      data: { companyId, createdById, ...input, ...toRouteData(route) },
       include: tripInclude,
     });
     return toTripDto(trip);
@@ -148,17 +173,55 @@ export async function updateTrip(
   if (windowStart >= windowEnd) {
     throw new HttpError(400, 'Fereastra trebuie să se termine după ce începe', 'INVALID_WINDOW');
   }
+  // adresele schimbate invalidează ruta calculată — o refacem odată cu update-ul
+  const originAddress = input.originAddress ?? current.originAddress;
+  const destAddress = input.destAddress ?? current.destAddress;
+  const addressChanged =
+    originAddress !== current.originAddress || destAddress !== current.destAddress;
+  const routeData = addressChanged
+    ? toRouteData(await resolveTripRoute(originAddress, destAddress))
+    : {};
   try {
     // statusul rămâne în where: blocăm atomic editarea dacă între timp cursa a pornit
     const trip = await prisma.trip.update({
       where: { id: current.id, status: { in: ['REQUEST', 'PLANNED'] } },
-      data: input,
+      data: { ...input, ...routeData },
       include: tripInclude,
     });
     return toTripDto(trip);
   } catch (err) {
     if (isPrismaError(err, 'P2025')) {
       throw new HttpError(409, 'Doar cursele neîncepute se pot edita', 'TRIP_LOCKED');
+    }
+    throw err;
+  }
+}
+
+// plasa de siguranță pentru cursele create cât timp Nominatim/OSRM erau picate
+export async function recalculateRoute(companyId: string, id: string): Promise<TripDetailDto> {
+  const current = await findOwnedTrip(companyId, id);
+  if (current.status !== 'REQUEST' && current.status !== 'PLANNED') {
+    throw new HttpError(409, 'Ruta se recalculează doar pentru curse neîncepute', 'TRIP_LOCKED');
+  }
+  const route = await resolveTripRoute(current.originAddress, current.destAddress);
+  if (route.routeGeometry === null) {
+    // nu suprascriem o rută existentă cu null doar pentru că serviciul e momentan picat
+    throw new HttpError(
+      503,
+      'Serviciul de rutare nu răspunde sau adresele nu au fost găsite; încearcă mai târziu',
+      'ROUTING_UNAVAILABLE',
+    );
+  }
+  try {
+    const trip = await prisma.trip.update({
+      where: { id: current.id, status: { in: ['REQUEST', 'PLANNED'] } },
+      data: toRouteData(route),
+      include: tripInclude,
+    });
+    return toTripDetailDto(trip);
+  } catch (err) {
+    if (isPrismaError(err, 'P2025')) {
+      throw new HttpError(409, 'Ruta se recalculează doar pentru curse neîncepute', 'TRIP_LOCKED');
     }
     throw err;
   }
