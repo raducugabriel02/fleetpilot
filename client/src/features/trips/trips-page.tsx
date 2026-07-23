@@ -2,12 +2,20 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ClipboardList, Pencil, Play, Plus, Route, Trash2, UserCog, X } from 'lucide-react';
+import { ClipboardList, Map, Pencil, Play, Plus, Route, Trash2, UserCog, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import type { ClientDto, DriverDto, TripDto, TripStatus, VehicleDto } from '@fleetpilot/shared';
+import type {
+  ClientDto,
+  DriverDto,
+  TripDetailDto,
+  TripDto,
+  TripStatus,
+  VehicleDto,
+} from '@fleetpilot/shared';
 import { CityAutocomplete } from '@/components/city-autocomplete';
 import { StatusBadge } from '@/components/status-badge';
+import { TripRouteMap } from '@/components/trip-route-map';
 import type { StatusKind } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -531,6 +539,40 @@ function TripActionDialog({
   );
 }
 
+function TripRouteDialog({
+  tripId,
+  onOpenChange,
+}: {
+  tripId: string | null;
+  onOpenChange: () => void;
+}) {
+  const detailQuery = useQuery({
+    queryKey: ['trips', tripId],
+    queryFn: () => apiFetch<TripDetailDto>(`/api/trips/${tripId}`),
+    enabled: tripId !== null,
+  });
+
+  return (
+    <Dialog open={tripId !== null} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Ruta cursei</DialogTitle>
+          <DialogDescription>
+            {detailQuery.data
+              ? `${detailQuery.data.originAddress} → ${detailQuery.data.destAddress}`
+              : 'Se încarcă…'}
+          </DialogDescription>
+        </DialogHeader>
+        {detailQuery.data ? (
+          <TripRouteMap trip={detailQuery.data} />
+        ) : (
+          <Skeleton className="h-72 w-full" />
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function TripsPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
@@ -544,6 +586,7 @@ export function TripsPage() {
   const [pendingAction, setPendingAction] = useState<{ trip: TripDto; action: TripAction } | null>(
     null,
   );
+  const [viewingRouteId, setViewingRouteId] = useState<string | null>(null);
 
   const openCreate = () => {
     setEditing(null);
@@ -638,6 +681,14 @@ export function TripsPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Vezi ruta cursei ${trip.client.name}`}
+                          onClick={() => setViewingRouteId(trip.id)}
+                        >
+                          <Map className="size-4" />
+                        </Button>
                         {(trip.status === 'REQUEST' || trip.status === 'PLANNED') && (
                           <Button
                             variant="ghost"
@@ -718,6 +769,7 @@ export function TripsPage() {
       />
       <AssignDialog trip={assigning} onOpenChange={() => setAssigning(null)} />
       <TripActionDialog pending={pendingAction} onOpenChange={() => setPendingAction(null)} />
+      <TripRouteDialog tripId={viewingRouteId} onOpenChange={() => setViewingRouteId(null)} />
     </div>
   );
 }

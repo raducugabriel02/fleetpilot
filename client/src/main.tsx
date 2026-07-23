@@ -6,6 +6,7 @@ import { App } from './App';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/features/auth/auth-context';
 import { ApiError } from '@/lib/api';
+import 'leaflet/dist/leaflet.css';
 import './index.css';
 
 const queryClient = new QueryClient({
