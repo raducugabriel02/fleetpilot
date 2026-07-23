@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, Navigate, Outlet, useLocation } from 'react-router-dom';
-import { Building2, LayoutDashboard, LogOut, Menu, Truck, Users } from 'lucide-react';
+import { Building2, LayoutDashboard, LogOut, Menu, Route, Truck, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useAuth } from '@/features/auth/auth-context';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -25,6 +25,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { to: '/app', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/app/trips', label: 'Curse', icon: Route },
   { to: '/app/vehicles', label: 'Vehicule', icon: Truck },
   { to: '/app/drivers', label: 'Șoferi', icon: Users },
   { to: '/app/clients', label: 'Clienți', icon: Building2 },

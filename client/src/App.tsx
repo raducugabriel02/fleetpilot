@@ -6,6 +6,7 @@ import { ClientsPage } from '@/features/clients/clients-page';
 import { DashboardPage } from '@/features/dashboard/dashboard-page';
 import { DriversPage } from '@/features/drivers/drivers-page';
 import { LandingPage } from '@/features/landing/landing-page';
+import { TripsPage } from '@/features/trips/trips-page';
 import { VehiclesPage } from '@/features/vehicles/vehicles-page';
 
 export function App() {
@@ -19,6 +20,7 @@ export function App() {
         {/* aplicația: AppLayout cere sesiune validă și redirecționează spre /login altfel */}
         <Route path="/app" element={<AppLayout />}>
           <Route index element={<DashboardPage />} />
+          <Route path="trips" element={<TripsPage />} />
           <Route path="vehicles" element={<VehiclesPage />} />
           <Route path="drivers" element={<DriversPage />} />
           <Route path="clients" element={<ClientsPage />} />
