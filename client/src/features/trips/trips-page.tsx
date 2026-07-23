@@ -55,7 +55,7 @@ import { useAuth } from '@/features/auth/auth-context';
 import { apiFetch, ApiError } from '@/lib/api';
 import { formatDateTime, toDateTimeInputValue } from '@/lib/format';
 
-const TRIP_STATUS_META: Record<TripStatus, { kind: StatusKind; label: string }> = {
+export const TRIP_STATUS_META: Record<TripStatus, { kind: StatusKind; label: string }> = {
   REQUEST: { kind: 'inactive', label: 'Cerere' },
   PLANNED: { kind: 'in-service', label: 'Planificată' },
   IN_PROGRESS: { kind: 'on-trip', label: 'În desfășurare' },

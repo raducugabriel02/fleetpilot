@@ -1,14 +1,37 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, ArrowRight, Building2, Route, Truck, Users } from 'lucide-react';
-import type { DriverDto, VehicleDto, ClientDto } from '@fleetpilot/shared';
+import type { DriverDto, VehicleDto, ClientDto, TripDto } from '@fleetpilot/shared';
 import { Plate } from '@/components/plate';
+import { StatusBadge } from '@/components/status-badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/features/auth/auth-context';
+import { TRIP_STATUS_META } from '@/features/trips/trips-page';
 import { apiFetch } from '@/lib/api';
-import { expiryLevel, formatDate } from '@/lib/format';
+import { expiryLevel, formatDateTime, formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
+
+function isSameLocalDay(iso: string, reference: Date): boolean {
+  const d = new Date(iso);
+  return (
+    d.getFullYear() === reference.getFullYear() &&
+    d.getMonth() === reference.getMonth() &&
+    d.getDate() === reference.getDate()
+  );
+}
+
+// „azi" = programate azi SAU deja în desfășurare (chiar dacă au pornit ieri)
+function collectTodaysTrips(trips: TripDto[]): TripDto[] {
+  const now = new Date();
+  return trips
+    .filter(
+      (t) =>
+        t.status !== 'CANCELLED' &&
+        (t.status === 'IN_PROGRESS' || isSameLocalDay(t.windowStart, now)),
+    )
+    .sort((a, b) => a.windowStart.localeCompare(b.windowStart));
+}
 
 interface ExpiryAlert {
   vehicle: VehicleDto;
@@ -86,11 +109,17 @@ export function DashboardPage() {
     queryKey: ['clients', ''],
     queryFn: () => apiFetch<ClientDto[]>('/api/clients?search='),
   });
+  const tripsQuery = useQuery({
+    queryKey: ['trips'],
+    queryFn: () => apiFetch<TripDto[]>('/api/trips'),
+  });
 
   const vehicles = vehiclesQuery.data;
   const available = vehicles?.filter((v) => v.status === 'AVAILABLE').length;
   const activeDrivers = driversQuery.data?.filter((d) => d.isActive).length;
   const alerts = vehicles ? collectAlerts(vehicles) : [];
+  const todaysTrips = tripsQuery.data ? collectTodaysTrips(tripsQuery.data) : [];
+  const inProgressCount = todaysTrips.filter((t) => t.status === 'IN_PROGRESS').length;
 
   return (
     <div className="space-y-6">
@@ -126,17 +155,61 @@ export function DashboardPage() {
           to="/app/clients"
           loading={clientsQuery.isPending}
         />
-        <Card className="border-dashed">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Curse azi</CardTitle>
-            <Route className="size-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <p className="font-mono text-2xl font-bold text-muted-foreground">—</p>
-            <p className="text-xs text-muted-foreground">vine în Faza 2, cu harta</p>
-          </CardContent>
-        </Card>
+        <KpiCard
+          title="Curse azi"
+          icon={Route}
+          value={todaysTrips.length}
+          detail={
+            inProgressCount > 0 ? `${inProgressCount} în desfășurare` : 'niciuna în desfășurare'
+          }
+          to="/app/trips"
+          loading={tripsQuery.isPending}
+        />
       </div>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Route className="size-4 text-muted-foreground" />
+            Curse azi
+          </CardTitle>
+          <Link
+            to="/app/trips"
+            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          >
+            Toate cursele <ArrowRight className="size-3" />
+          </Link>
+        </CardHeader>
+        <CardContent>
+          {tripsQuery.isPending ? (
+            <Skeleton className="h-16 w-full" />
+          ) : todaysTrips.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nicio cursă programată azi.</p>
+          ) : (
+            <ul className="divide-y">
+              {todaysTrips.map((trip) => {
+                const status = TRIP_STATUS_META[trip.status];
+                return (
+                  <li key={trip.id} className="flex items-center justify-between gap-3 py-2">
+                    <div>
+                      <p className="text-sm font-medium">{trip.client.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {trip.originAddress} → {trip.destAddress}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="font-mono text-sm text-muted-foreground">
+                        {formatDateTime(trip.windowStart)}
+                      </span>
+                      <StatusBadge kind={status.kind} label={status.label} />
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
