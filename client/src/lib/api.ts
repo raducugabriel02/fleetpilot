@@ -12,6 +12,10 @@ export function setAccessToken(token: string | null): void {
   accessToken = token;
 }
 
+export function getAccessToken(): string | null {
+  return accessToken;
+}
+
 /** setat de AuthProvider: apelat când sesiunea nu mai poate fi reînnoită */
 let onSessionExpired: (() => void) | null = null;
 

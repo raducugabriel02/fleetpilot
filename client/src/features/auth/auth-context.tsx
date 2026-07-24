@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import type { AuthUser, LoginInput, RegisterInput } from '@fleetpilot/shared';
 import type { AuthResponse } from '@fleetpilot/shared';
 import { apiFetch, refreshSession, setAccessToken, setOnSessionExpired } from '@/lib/api';
+import { connectSocket, disconnectSocket } from '@/lib/socket';
 
 type AuthState =
   | { status: 'loading'; user: null }
@@ -43,6 +44,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     return () => setOnSessionExpired(null);
   }, []);
+
+  // socket-ul urmează starea sesiunii: conectat doar cât timp userul e autentificat
+  useEffect(() => {
+    if (state.status === 'authenticated') {
+      connectSocket();
+    } else {
+      disconnectSocket();
+    }
+  }, [state.status]);
 
   const applyAuth = useCallback((response: AuthResponse) => {
     setAccessToken(response.accessToken);

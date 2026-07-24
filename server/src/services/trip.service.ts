@@ -11,6 +11,7 @@ import type {
 import { prisma } from '../lib/prisma';
 import { isPrismaError } from '../lib/prisma-errors';
 import { HttpError } from '../middleware/error';
+import * as gpsSimulator from './gps-simulator.service';
 import { resolveTripRoute } from './routing.service';
 import type { TripRouteFields } from './routing.service';
 
@@ -316,7 +317,11 @@ export async function assignTrip(
   }
 }
 
-export async function startTrip(companyId: string, id: string): Promise<TripDto> {
+export async function startTrip(
+  companyId: string,
+  id: string,
+  accelerated: boolean,
+): Promise<TripDto> {
   const current = await findOwnedTrip(companyId, id);
   if (current.status !== 'PLANNED') {
     throw new HttpError(409, 'Doar cursele planificate se pot porni', 'TRIP_NOT_PLANNED');
@@ -359,6 +364,17 @@ export async function startTrip(companyId: string, id: string): Promise<TripDto>
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
+    // best-effort: fără rută cunoscută nu avem ce interpola, dar cursa tot pornește
+    if (trip.routeGeometry && trip.durationMin) {
+      gpsSimulator.startSimulation({
+        tripId: trip.id,
+        companyId,
+        vehicleId,
+        route: routeGeometrySchema.parse(trip.routeGeometry),
+        durationMin: trip.durationMin,
+        accelerated,
+      });
+    }
     return toTripDto(trip);
   } catch (err) {
     if (isPrismaError(err, 'P2025')) {
@@ -397,6 +413,7 @@ export async function completeTrip(companyId: string, id: string): Promise<TripD
       }
       return completed;
     });
+    gpsSimulator.stopSimulation(trip.id);
     return toTripDto(trip);
   } catch (err) {
     if (isPrismaError(err, 'P2025')) {
@@ -414,6 +431,7 @@ export async function cancelTrip(companyId: string, id: string): Promise<TripDto
       data: { status: 'CANCELLED' },
       include: tripInclude,
     });
+    gpsSimulator.stopSimulation(trip.id);
     return toTripDto(trip);
   } catch (err) {
     if (isPrismaError(err, 'P2025')) {

@@ -14,6 +14,7 @@ export default defineConfig({
     // în dev, /api merge prin proxy către Express — fără CORS și fără URL-uri hardcodate
     proxy: {
       '/api': 'http://localhost:4000',
+      '/socket.io': { target: 'http://localhost:4000', ws: true },
     },
   },
 });

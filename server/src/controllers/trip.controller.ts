@@ -4,6 +4,7 @@ import {
   createTripSchema,
   idParamSchema,
   listTripsQuerySchema,
+  startTripSchema,
   updateTripSchema,
 } from '@fleetpilot/shared';
 import type { TripDetailDto, TripDto } from '@fleetpilot/shared';
@@ -51,7 +52,8 @@ export async function assign(req: Request, res: Response<TripDto>): Promise<void
 export async function start(req: Request, res: Response<TripDto>): Promise<void> {
   const { companyId } = getAuth(req);
   const { id } = idParamSchema.parse(req.params);
-  res.json(await tripService.startTrip(companyId, id));
+  const { accelerated } = startTripSchema.parse(req.body ?? {});
+  res.json(await tripService.startTrip(companyId, id, accelerated));
 }
 
 export async function complete(req: Request, res: Response<TripDto>): Promise<void> {

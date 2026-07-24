@@ -64,6 +64,11 @@ export const assignTripSchema = z.object({
   driverId: z.cuid('Id de șofer invalid'),
 });
 
+// „accelerated": simulare GPS 3h -> 3min, pentru demo-uri
+export const startTripSchema = z.object({
+  accelerated: z.boolean().optional().default(false),
+});
+
 export const listTripsQuerySchema = z
   .object({
     status: tripStatusSchema.optional(),
