@@ -53,7 +53,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useAuth } from '@/features/auth/auth-context';
-import { apiFetch, ApiError } from '@/lib/api';
+import { apiFetch } from '@/lib/api';
+import { errorMessage } from '@/lib/errors';
 import { formatDateTime, toDateTimeInputValue } from '@/lib/format';
 
 export const TRIP_STATUS_META: Record<TripStatus, { kind: StatusKind; label: string }> = {
@@ -63,28 +64,6 @@ export const TRIP_STATUS_META: Record<TripStatus, { kind: StatusKind; label: str
   COMPLETED: { kind: 'available', label: 'Finalizată' },
   CANCELLED: { kind: 'alert', label: 'Anulată' },
 };
-
-function isZodIssueLike(value: unknown): value is { message: string } {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    typeof (value as Record<string, unknown>).message === 'string'
-  );
-}
-
-function errorMessage(err: unknown): string {
-  if (!(err instanceof ApiError)) return 'Ceva n-a mers. Încearcă din nou.';
-  // "Date invalide" e umbrela generică pentru orice eșec Zod pe server — issue-ul concret
-  // (ce câmp, de ce) stă în details, altfel utilizatorul nu află niciodată motivul real
-  if (
-    err.code === 'VALIDATION_ERROR' &&
-    Array.isArray(err.details) &&
-    isZodIssueLike(err.details[0])
-  ) {
-    return err.details[0].message;
-  }
-  return err.message;
-}
 
 /*
  * Formularul lucrează cu string-uri; validarea de format completă (fereastră,

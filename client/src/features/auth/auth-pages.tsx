@@ -17,12 +17,8 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { ApiError } from '@/lib/api';
+import { errorMessage } from '@/lib/errors';
 import type { ReactNode } from 'react';
-
-function errorMessage(err: unknown): string {
-  return err instanceof ApiError ? err.message : 'Ceva n-a mers. Încearcă din nou.';
-}
 
 function AuthShell({
   title,

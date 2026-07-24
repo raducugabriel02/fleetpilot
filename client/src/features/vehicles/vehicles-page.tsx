@@ -44,7 +44,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { apiFetch, ApiError } from '@/lib/api';
+import { apiFetch } from '@/lib/api';
+import { errorMessage } from '@/lib/errors';
 import { expiryLevel, formatDate, toDateInputValue } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
@@ -97,10 +98,6 @@ function formDefaults(vehicle?: VehicleDto): VehicleFormValues {
     rcaExpiresAt: toDateInputValue(vehicle?.rcaExpiresAt ?? null),
     vignetteExpiresAt: toDateInputValue(vehicle?.vignetteExpiresAt ?? null),
   };
-}
-
-function errorMessage(err: unknown): string {
-  return err instanceof ApiError ? err.message : 'Ceva n-a mers. Încearcă din nou.';
 }
 
 const EXPIRY_CLASSES = {

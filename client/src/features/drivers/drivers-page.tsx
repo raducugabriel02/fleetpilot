@@ -44,7 +44,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { apiFetch, ApiError } from '@/lib/api';
+import { apiFetch } from '@/lib/api';
+import { errorMessage } from '@/lib/errors';
 import { expiryLevel, formatDate, toDateInputValue } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
@@ -53,10 +54,6 @@ const ABSENCE_TYPE_LABELS: Record<AbsenceType, string> = {
   SICK_LEAVE: 'Medical',
   OTHER: 'Altele',
 };
-
-function errorMessage(err: unknown): string {
-  return err instanceof ApiError ? err.message : 'Ceva n-a mers. Încearcă din nou.';
-}
 
 /* formular pe string-uri; validarea de format completă rămâne pe server */
 const driverFormSchema = z.object({

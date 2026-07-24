@@ -33,11 +33,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { apiFetch, ApiError } from '@/lib/api';
-
-function errorMessage(err: unknown): string {
-  return err instanceof ApiError ? err.message : 'Ceva n-a mers. Încearcă din nou.';
-}
+import { apiFetch } from '@/lib/api';
+import { errorMessage } from '@/lib/errors';
 
 const clientFormSchema = z.object({
   name: z.string().trim().min(1, 'Numele e obligatoriu'),
