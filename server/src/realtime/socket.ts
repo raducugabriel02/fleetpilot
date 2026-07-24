@@ -1,18 +1,11 @@
 import type { Server as HttpServer } from 'node:http';
 import { Server } from 'socket.io';
+import type { VehiclePositionEvent } from '@fleetpilot/shared';
 import { verifyAccessToken } from '../lib/jwt';
 import { env } from '../lib/env';
 
 export interface ServerToClientEvents {
-  'vehicle:position': (payload: {
-    vehicleId: string;
-    tripId: string;
-    lat: number;
-    lng: number;
-    speedKmh: number;
-    heading: number | null;
-    recordedAt: string;
-  }) => void;
+  'vehicle:position': (payload: VehiclePositionEvent) => void;
   'trip:notification': (payload: {
     tripId: string;
     kind: 'COMPLETED' | 'LATE';

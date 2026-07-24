@@ -1,11 +1,19 @@
 import { useMemo } from 'react';
 import L from 'leaflet';
-import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from 'react-leaflet';
+import {
+  CircleMarker,
+  MapContainer,
+  Marker,
+  Polyline,
+  Popup,
+  TileLayer,
+  useMap,
+} from 'react-leaflet';
 import type { LatLngBoundsExpression, LatLngTuple } from 'leaflet';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
-import type { TripDetailDto } from '@fleetpilot/shared';
+import type { TripDetailDto, VehiclePositionEvent } from '@fleetpilot/shared';
 
 // Vite mută asset-urile Leaflet la build (hash în URL); iconul default caută
 // căile hardcodate din CSS și nu le găsește dacă nu le legăm explicit aici.
@@ -24,7 +32,13 @@ function FitToBounds({ bounds }: { bounds: LatLngBoundsExpression }) {
   return null;
 }
 
-export function TripRouteMap({ trip }: { trip: TripDetailDto }) {
+export function TripRouteMap({
+  trip,
+  livePosition,
+}: {
+  trip: TripDetailDto;
+  livePosition?: VehiclePositionEvent | null;
+}) {
   const points = useMemo(() => {
     const origin: LatLngTuple | null =
       trip.originLat != null && trip.originLng != null ? [trip.originLat, trip.originLng] : null;
@@ -75,6 +89,18 @@ export function TripRouteMap({ trip }: { trip: TripDetailDto }) {
           <Marker position={points.dest} icon={defaultIcon}>
             <Popup>Destinație: {trip.destAddress}</Popup>
           </Marker>
+        )}
+        {livePosition && (
+          <CircleMarker
+            center={[livePosition.lat, livePosition.lng]}
+            radius={8}
+            pathOptions={{ color: '#f59e0b', fillColor: '#f59e0b', fillOpacity: 0.9 }}
+          >
+            <Popup>
+              {livePosition.speedKmh.toFixed(0)} km/h
+              {livePosition.heading != null ? ` · heading ${livePosition.heading.toFixed(0)}°` : ''}
+            </Popup>
+          </CircleMarker>
         )}
         <FitToBounds bounds={bounds} />
       </MapContainer>

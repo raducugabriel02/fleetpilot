@@ -16,6 +16,7 @@ import type {
 import { CityAutocomplete } from '@/components/city-autocomplete';
 import { StatusBadge } from '@/components/status-badge';
 import { TripRouteMap } from '@/components/trip-route-map';
+import { useVehiclePosition } from './use-vehicle-position';
 import type { StatusKind } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -551,6 +552,11 @@ function TripRouteDialog({
     queryFn: () => apiFetch<TripDetailDto>(`/api/trips/${tripId}`),
     enabled: tripId !== null,
   });
+  // doar cursele în desfășurare au simulator GPS activ pe server — pentru orice alt
+  // status hook-ul rămâne conectat degeaba, dar nu primește niciodată evenimente
+  const livePosition = useVehiclePosition(
+    detailQuery.data?.status === 'IN_PROGRESS' ? tripId : null,
+  );
 
   return (
     <Dialog open={tripId !== null} onOpenChange={onOpenChange}>
@@ -564,7 +570,7 @@ function TripRouteDialog({
           </DialogDescription>
         </DialogHeader>
         {detailQuery.data ? (
-          <TripRouteMap trip={detailQuery.data} />
+          <TripRouteMap trip={detailQuery.data} livePosition={livePosition} />
         ) : (
           <Skeleton className="h-72 w-full" />
         )}

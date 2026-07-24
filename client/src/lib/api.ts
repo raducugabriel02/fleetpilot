@@ -51,7 +51,13 @@ export function refreshSession(): Promise<AuthResponse | null> {
   refreshInFlight ??= (async () => {
     try {
       const res = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' });
-      if (!res.ok) return null;
+      if (!res.ok) {
+        // refuz explicit al serverului (refresh token invalid/expirat) — sesiunea chiar a
+        // murit, spre deosebire de o eroare de rețea tranzitorie (vezi catch mai jos), care
+        // nu trebuie să deconecteze userul degeaba
+        onSessionExpired?.();
+        return null;
+      }
       const data = (await res.json()) as AuthResponse;
       accessToken = data.accessToken;
       return data;
