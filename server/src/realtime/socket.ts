@@ -1,16 +1,12 @@
 import type { Server as HttpServer } from 'node:http';
 import { Server } from 'socket.io';
-import type { VehiclePositionEvent } from '@fleetpilot/shared';
+import type { TripNotificationEvent, VehiclePositionEvent } from '@fleetpilot/shared';
 import { verifyAccessToken } from '../lib/jwt';
 import { env } from '../lib/env';
 
 export interface ServerToClientEvents {
   'vehicle:position': (payload: VehiclePositionEvent) => void;
-  'trip:notification': (payload: {
-    tripId: string;
-    kind: 'COMPLETED' | 'LATE';
-    message: string;
-  }) => void;
+  'trip:notification': (payload: TripNotificationEvent) => void;
 }
 
 // fără evenimente client→server deocamdată — clientul doar ascultă

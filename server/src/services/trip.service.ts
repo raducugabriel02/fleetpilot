@@ -10,8 +10,11 @@ import type {
 } from '@fleetpilot/shared';
 import { prisma } from '../lib/prisma';
 import { isPrismaError } from '../lib/prisma-errors';
+import { routeLabel } from '../lib/route-label';
 import { HttpError } from '../middleware/error';
+import { companyRoom, getIo } from '../realtime/socket';
 import * as gpsSimulator from './gps-simulator.service';
+import { clearNotifiedLate } from './late-trip-checker.service';
 import { resolveTripRoute } from './routing.service';
 import type { TripRouteFields } from './routing.service';
 
@@ -397,11 +400,12 @@ export async function completeTrip(companyId: string, id: string): Promise<TripD
     throw new HttpError(409, 'Doar cursele în desfășurare se pot finaliza', 'TRIP_NOT_IN_PROGRESS');
   }
 
+  const completedAt = new Date();
   try {
     const trip = await prisma.$transaction(async (tx) => {
       const completed = await tx.trip.update({
         where: { id: current.id, status: 'IN_PROGRESS' },
-        data: { status: 'COMPLETED', completedAt: new Date() },
+        data: { status: 'COMPLETED', completedAt },
         include: tripInclude,
       });
       if (current.vehicleId) {
@@ -414,6 +418,20 @@ export async function completeTrip(companyId: string, id: string): Promise<TripD
       return completed;
     });
     gpsSimulator.stopSimulation(trip.id);
+    // dacă checker-ul periodic n-a apucat încă să prindă întârzierea (fereastra a
+    // trecut cu puțin înainte de finalizare), n-are rost să mai trimită LATE acum —
+    // cursa oricum s-a terminat; dispecerul află de întârziere direct din mesaj
+    clearNotifiedLate(trip.id);
+    const wasLate = completedAt.getTime() > trip.windowEnd.getTime();
+    getIo()
+      .to(companyRoom(companyId))
+      .emit('trip:notification', {
+        tripId: trip.id,
+        kind: 'COMPLETED',
+        message: wasLate
+          ? `Cursa ${routeLabel(trip)} a fost finalizată cu întârziere`
+          : `Cursa ${routeLabel(trip)} a fost finalizată`,
+      });
     return toTripDto(trip);
   } catch (err) {
     if (isPrismaError(err, 'P2025')) {

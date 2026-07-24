@@ -14,3 +14,12 @@ export const vehiclePositionEventSchema = z.object({
   recordedAt: z.iso.datetime(),
 });
 export type VehiclePositionEvent = z.infer<typeof vehiclePositionEventSchema>;
+
+// payload-ul evenimentului 'trip:notification' — cursă finalizată sau care a depășit
+// fereastra de livrare fără să fi fost finalizată
+export const tripNotificationEventSchema = z.object({
+  tripId: z.string(),
+  kind: z.enum(['COMPLETED', 'LATE']),
+  message: z.string(),
+});
+export type TripNotificationEvent = z.infer<typeof tripNotificationEventSchema>;

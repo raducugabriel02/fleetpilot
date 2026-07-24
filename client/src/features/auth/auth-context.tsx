@@ -1,5 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
+import { toast } from 'sonner';
+import { tripNotificationEventSchema } from '@fleetpilot/shared';
 import type { AuthUser, LoginInput, RegisterInput } from '@fleetpilot/shared';
 import type { AuthResponse } from '@fleetpilot/shared';
 import { apiFetch, refreshSession, setAccessToken, setOnSessionExpired } from '@/lib/api';
@@ -52,6 +54,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else {
       disconnectSocket();
     }
+  }, [state.status]);
+
+  // notificări globale (cursă finalizată/întârziată) — vizibile indiferent de pagina
+  // curentă, spre deosebire de poziția live, care e specifică dialogului unei curse
+  useEffect(() => {
+    if (state.status !== 'authenticated') return;
+    const socket = connectSocket();
+
+    function onNotification(raw: unknown) {
+      const parsed = tripNotificationEventSchema.safeParse(raw);
+      if (!parsed.success) return;
+      if (parsed.data.kind === 'LATE') {
+        toast.warning(parsed.data.message);
+      } else {
+        toast.success(parsed.data.message);
+      }
+    }
+
+    socket.on('trip:notification', onNotification);
+    return () => {
+      socket.off('trip:notification', onNotification);
+    };
   }, [state.status]);
 
   const applyAuth = useCallback((response: AuthResponse) => {
