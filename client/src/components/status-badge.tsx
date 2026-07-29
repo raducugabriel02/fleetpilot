@@ -31,7 +31,13 @@ export function StatusBadge({
         className,
       )}
     >
-      <span aria-hidden className="size-2 rounded-full bg-current" />
+      <span aria-hidden className="relative flex size-2">
+        {/* pulsul e rezervat statusului "on-trip": singurul care reflectă mișcare reală (GPS live) */}
+        {kind === 'on-trip' && (
+          <span className="motion-safe:absolute motion-safe:inline-flex motion-safe:size-full motion-safe:animate-ping motion-safe:rounded-full motion-safe:bg-current motion-safe:opacity-75" />
+        )}
+        <span className="relative inline-flex size-2 rounded-full bg-current" />
+      </span>
       {label}
     </span>
   );

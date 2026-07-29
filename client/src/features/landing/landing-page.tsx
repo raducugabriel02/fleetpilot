@@ -136,12 +136,15 @@ export function LandingPage() {
   return (
     <div className="min-h-dvh">
       <header className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 md:px-6">
-        <div className="flex items-center gap-2 font-semibold tracking-tight">
+        <Link
+          to="/"
+          className="flex items-center gap-2 font-semibold tracking-tight transition-opacity hover:opacity-80"
+        >
           <span className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <Truck className="size-4" aria-hidden="true" />
           </span>
           FleetPilot
-        </div>
+        </Link>
         <nav className="flex items-center gap-2">
           <Button variant="ghost" asChild>
             <Link to="/login">Autentificare</Link>
@@ -153,15 +156,15 @@ export function LandingPage() {
       </header>
 
       <main>
-        <section className="mx-auto grid w-full max-w-6xl items-center gap-10 px-4 py-16 md:grid-cols-2 md:px-6 md:py-24">
+        <section className="mx-auto grid w-full max-w-6xl items-center gap-10 overflow-x-clip px-4 py-16 md:grid-cols-2 md:px-6 md:py-24">
           <div className="space-y-6">
             <p className="text-sm font-medium tracking-wide text-primary uppercase">
               Dispecerat cu AI pentru flote de 2–20 camioane
             </p>
-            <h1 className="text-4xl font-bold tracking-tight text-balance md:text-5xl">
+            <h1 className="text-4xl font-bold tracking-tighter text-balance md:text-5xl lg:text-6xl">
               Comenzile vin pe telefon.
               <br />
-              Restul îl face FleetPilot.
+              Restul îl face <span className="text-primary">FleetPilot</span>.
             </h1>
             <p className="max-w-prose text-lg text-muted-foreground">
               Platforma de dispecerat care ține evidența flotei, urmărește cursele pe hartă și îți
@@ -176,7 +179,11 @@ export function LandingPage() {
               </Button>
             </div>
           </div>
-          <div className="flex justify-center md:justify-end">
+          <div className="relative flex justify-center md:justify-end">
+            <div
+              aria-hidden
+              className="absolute -inset-8 -z-10 rounded-full bg-primary/20 blur-3xl"
+            />
             <DispatchPreview />
           </div>
         </section>

@@ -60,9 +60,17 @@ function collectAlerts(vehicles: VehicleDto[]): ExpiryAlert[] {
   return alerts.sort((a, b) => a.date.localeCompare(b.date));
 }
 
+const KPI_TONE_STYLES = {
+  available: 'bg-status-available/10 text-status-available',
+  primary: 'bg-primary/10 text-primary',
+  neutral: 'bg-secondary text-secondary-foreground',
+  'on-trip': 'bg-status-on-trip/10 text-status-on-trip',
+} as const;
+
 function KpiCard({
   title,
   icon: Icon,
+  tone,
   value,
   detail,
   to,
@@ -70,25 +78,34 @@ function KpiCard({
 }: {
   title: string;
   icon: typeof Truck;
+  tone: keyof typeof KPI_TONE_STYLES;
   value: number | undefined;
   detail: string;
   to: string;
   loading: boolean;
 }) {
   return (
-    <Card className="transition-colors hover:border-primary/50">
+    <Card className="transition-all hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-md focus-within:-translate-y-0.5 focus-within:border-primary/50 focus-within:shadow-md motion-reduce:hover:translate-y-0">
       <Link to={to} className="block">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-          <Icon className="size-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <Skeleton className="h-8 w-16" />
-          ) : (
-            <p className="font-mono text-2xl font-bold">{value}</p>
-          )}
-          <p className="text-xs text-muted-foreground">{detail}</p>
+        <CardContent className="flex items-center gap-4 p-4">
+          <span
+            aria-hidden
+            className={cn(
+              'flex size-10 shrink-0 items-center justify-center rounded-lg',
+              KPI_TONE_STYLES[tone],
+            )}
+          >
+            <Icon className="size-5" />
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-muted-foreground">{title}</p>
+            {loading ? (
+              <Skeleton className="mt-1 h-7 w-12" />
+            ) : (
+              <p className="font-mono text-2xl leading-tight font-bold">{value}</p>
+            )}
+            <p className="truncate text-xs text-muted-foreground">{detail}</p>
+          </div>
         </CardContent>
       </Link>
     </Card>
@@ -134,6 +151,7 @@ export function DashboardPage() {
         <KpiCard
           title="Vehicule disponibile"
           icon={Truck}
+          tone="available"
           value={available}
           detail={`din ${vehicles?.length ?? 0} în flotă`}
           to="/app/vehicles"
@@ -142,6 +160,7 @@ export function DashboardPage() {
         <KpiCard
           title="Șoferi activi"
           icon={Users}
+          tone="primary"
           value={activeDrivers}
           detail={`din ${driversQuery.data?.length ?? 0} înregistrați`}
           to="/app/drivers"
@@ -150,6 +169,7 @@ export function DashboardPage() {
         <KpiCard
           title="Clienți"
           icon={Building2}
+          tone="neutral"
           value={clientsQuery.data?.length}
           detail="firme partenere"
           to="/app/clients"
@@ -158,6 +178,7 @@ export function DashboardPage() {
         <KpiCard
           title="Curse azi"
           icon={Route}
+          tone="on-trip"
           value={todaysTrips.length}
           detail={
             inProgressCount > 0 ? `${inProgressCount} în desfășurare` : 'niciuna în desfășurare'

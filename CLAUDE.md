@@ -84,9 +84,10 @@ Pentru cursele ÎN DESFĂȘURARE, generează poziții de-a lungul rutei OSRM la 
 2. La schimbări de schemă → subagentul **db-guardian** întâi
 3. Implementare folosind skill-urile **new-endpoint** / **agent-tool**
 4. Hooks-urile formatează și verifică compilarea automat
-5. Subagentul **code-reviewer** înainte de commit
-6. Pentru agentul AI → subagentul **agent-tester** cu scenariile din `.claude/skills/test-dispecer/scenarios.md`
-7. `/code-review` final înainte de merge în main
+5. Pentru orice schimbare în `client/src/` → subagentul **ui-reviewer** înainte de code-reviewer
+6. Subagentul **code-reviewer** înainte de commit
+7. Pentru agentul AI → subagentul **agent-tester** cu scenariile din `.claude/skills/test-dispecer/scenarios.md`
+8. `/code-review` final înainte de merge în main
 
 ## Definition of Done (pentru fiecare feature)
 
