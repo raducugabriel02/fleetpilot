@@ -39,12 +39,15 @@ function AuthShell({
   }
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-6 p-4">
-      <div className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+      <Link
+        to="/"
+        className="flex items-center gap-2 text-lg font-semibold tracking-tight transition-opacity hover:opacity-80"
+      >
         <span className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
           <Truck className="size-5" />
         </span>
         FleetPilot
-      </div>
+      </Link>
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>{title}</CardTitle>

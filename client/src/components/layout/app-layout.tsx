@@ -1,7 +1,17 @@
 import { useState } from 'react';
-import { NavLink, Navigate, Outlet, useLocation } from 'react-router-dom';
-import { Building2, LayoutDashboard, LogOut, Menu, Route, Truck, Users } from 'lucide-react';
+import { Link, NavLink, Navigate, Outlet, useLocation } from 'react-router-dom';
+import {
+  Building2,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Route,
+  Sparkles,
+  Truck,
+  Users,
+} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import type { Role } from '@fleetpilot/shared';
 import { useAuth } from '@/features/auth/auth-context';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
@@ -21,50 +31,60 @@ interface NavItem {
   to: string;
   label: string;
   icon: LucideIcon;
+  roles?: Role[];
 }
 
 const NAV_ITEMS: NavItem[] = [
   { to: '/app', label: 'Dashboard', icon: LayoutDashboard },
+  // dispecerul AI e unealtă de dispecerat — backend-ul refuză 403 pe rol DRIVER
+  { to: '/app/agent', label: 'Dispecer AI', icon: Sparkles, roles: ['ADMIN', 'DISPATCHER'] },
   { to: '/app/trips', label: 'Curse', icon: Route },
   { to: '/app/vehicles', label: 'Vehicule', icon: Truck },
   { to: '/app/drivers', label: 'Șoferi', icon: Users },
   { to: '/app/clients', label: 'Clienți', icon: Building2 },
 ];
 
-function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+function NavLinks({ role, onNavigate }: { role: Role; onNavigate?: () => void }) {
   return (
     <nav aria-label="Navigație principală" className="flex flex-col gap-1 px-3">
-      {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
-        <NavLink
-          key={to}
-          to={to}
-          end={to === '/app'}
-          onClick={onNavigate}
-          className={({ isActive }) =>
-            cn(
-              'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-              isActive
-                ? 'bg-primary/15 text-primary'
-                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-            )
-          }
-        >
-          <Icon className="size-4 shrink-0" />
-          {label}
-        </NavLink>
-      ))}
+      {NAV_ITEMS.filter((item) => !item.roles || item.roles.includes(role)).map(
+        ({ to, label, icon: Icon }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={to === '/app'}
+            onClick={onNavigate}
+            className={({ isActive }) =>
+              cn(
+                'relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                'before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-full before:bg-primary before:transition-opacity',
+                isActive
+                  ? 'bg-primary/15 text-primary before:opacity-100'
+                  : 'text-muted-foreground before:opacity-0 hover:bg-accent hover:text-accent-foreground',
+              )
+            }
+          >
+            <Icon className="size-4 shrink-0" />
+            {label}
+          </NavLink>
+        ),
+      )}
     </nav>
   );
 }
 
-function Brand() {
+function Brand({ onNavigate }: { onNavigate?: () => void }) {
   return (
-    <div className="flex items-center gap-2 px-6 font-semibold tracking-tight">
+    <Link
+      to="/app"
+      onClick={onNavigate}
+      className="flex items-center gap-2 px-6 font-semibold tracking-tight transition-opacity hover:opacity-80"
+    >
       <span className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
         <Truck className="size-4" />
       </span>
       FleetPilot
-    </div>
+    </Link>
   );
 }
 
@@ -101,7 +121,7 @@ export function AppLayout() {
       {/* sidebar permanent pe desktop */}
       <aside className="hidden w-60 shrink-0 flex-col gap-6 border-r bg-card py-5 md:flex">
         <Brand />
-        <NavLinks />
+        <NavLinks role={user.role} />
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -120,8 +140,8 @@ export function AppLayout() {
             </SheetTrigger>
             <SheetContent side="left" className="w-64 gap-6 py-5">
               <SheetTitle className="sr-only">Meniu de navigație</SheetTitle>
-              <Brand />
-              <NavLinks onNavigate={() => setMobileNavOpen(false)} />
+              <Brand onNavigate={() => setMobileNavOpen(false)} />
+              <NavLinks role={user.role} onNavigate={() => setMobileNavOpen(false)} />
             </SheetContent>
           </Sheet>
 

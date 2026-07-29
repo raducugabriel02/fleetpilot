@@ -8,10 +8,11 @@ export const passwordSchema = z.string().min(8, 'Parola trebuie să aibă minim 
 
 export const registerSchema = z.object({
   companyName: z.string().trim().min(2, 'Numele firmei e prea scurt').max(100),
+  // string gol e valid (înseamnă „fără CUI"); clientul îl transformă în undefined înainte de trimitere
   cui: z
     .string()
     .trim()
-    .regex(/^(RO)?\d{2,10}$/, 'CUI invalid (ex: RO12345678)')
+    .regex(/^(RO)?\d{2,10}$|^$/, 'CUI invalid (ex: RO12345678)')
     .optional(),
   name: z.string().trim().min(2, 'Numele e prea scurt').max(100),
   email: z.email('Email invalid'),
