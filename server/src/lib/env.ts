@@ -13,6 +13,7 @@ const envSchema = z.object({
   // trebuie să fie URL-uri root (fără path) — new URL('/cale', base) ar șterge path-ul
   OSRM_BASE_URL: z.url().default('https://router.project-osrm.org'),
   NOMINATIM_BASE_URL: z.url().default('https://nominatim.openstreetmap.org'),
+  ANTHROPIC_API_KEY: z.string().min(1, 'ANTHROPIC_API_KEY lipsește din .env'),
 });
 
 export const env = envSchema.parse(process.env);

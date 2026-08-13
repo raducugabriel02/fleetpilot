@@ -127,6 +127,16 @@ export async function createTrip(
   createdById: string,
   input: CreateTripInput,
 ): Promise<TripDto> {
+  // invariantele astea le validează și createTripSchema la granița controller-ului, dar
+  // agent.service.approveAction apelează createTrip direct, fără să treacă prin schema
+  // aceea — verificarea trebuie să existe și aici, ca regulă de business unică pentru
+  // toți apelanții, nu doar pentru un singur endpoint
+  if (input.windowStart >= input.windowEnd) {
+    throw new HttpError(400, 'Fereastra trebuie să se termine după ce începe', 'INVALID_WINDOW');
+  }
+  if (input.pallets === undefined && input.weightTons === undefined) {
+    throw new HttpError(400, 'Specifică paleții sau tonajul (măcar una)', 'CAPACITY_REQUIRED');
+  }
   await assertOwnedClient(prisma, companyId, input.clientId);
   // best-effort: dacă Nominatim/OSRM nu răspund, cursa se creează cu ruta null
   // și se completează ulterior prin POST /:id/route

@@ -3,6 +3,7 @@ import cors from 'cors';
 import express from 'express';
 import { env } from './lib/env';
 import { errorHandler, notFoundHandler } from './middleware/error';
+import { agentRouter } from './routes/agent';
 import { authRouter } from './routes/auth';
 import { clientsRouter } from './routes/clients';
 import { driversRouter } from './routes/drivers';
@@ -19,6 +20,7 @@ export function createApp(): express.Express {
   app.use(cookieParser());
 
   app.use('/api/health', healthRouter);
+  app.use('/api/agent', agentRouter);
   app.use('/api/auth', authRouter);
   app.use('/api/clients', clientsRouter);
   app.use('/api/drivers', driversRouter);

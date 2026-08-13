@@ -1,3 +1,4 @@
+export * from './schemas/agent';
 export * from './schemas/api';
 export * from './schemas/auth';
 export * from './schemas/client';
