@@ -23,3 +23,13 @@ export const tripNotificationEventSchema = z.object({
   message: z.string(),
 });
 export type TripNotificationEvent = z.infer<typeof tripNotificationEventSchema>;
+
+// payload-ul evenimentului 'vehicle:alert' — rezumat zilnic al documentelor de vehicul
+// (ITP/RCA/rovinietă) expirate sau care expiră curând; spre deosebire de trip:notification,
+// se repetă zilnic cât timp problema persistă (nu e un eveniment unic legat de o cursă)
+export const vehicleAlertEventSchema = z.object({
+  message: z.string(),
+  expiredCount: z.number().int(),
+  soonCount: z.number().int(),
+});
+export type VehicleAlertEvent = z.infer<typeof vehicleAlertEventSchema>;

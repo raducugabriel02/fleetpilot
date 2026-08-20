@@ -8,6 +8,7 @@ import { authRouter } from './routes/auth';
 import { clientsRouter } from './routes/clients';
 import { driversRouter } from './routes/drivers';
 import { healthRouter } from './routes/health';
+import { reportsRouter } from './routes/reports';
 import { tripsRouter } from './routes/trips';
 import { vehiclesRouter } from './routes/vehicles';
 
@@ -34,6 +35,7 @@ export function createApp(): express.Express {
   app.use('/api/drivers', driversRouter);
   app.use('/api/vehicles', vehiclesRouter);
   app.use('/api/trips', tripsRouter);
+  app.use('/api/reports', reportsRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

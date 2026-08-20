@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { toast } from 'sonner';
-import { tripNotificationEventSchema } from '@fleetpilot/shared';
+import { tripNotificationEventSchema, vehicleAlertEventSchema } from '@fleetpilot/shared';
 import type { AuthUser, LoginInput, RegisterInput } from '@fleetpilot/shared';
 import type { AuthResponse } from '@fleetpilot/shared';
 import { apiFetch, refreshSession, setAccessToken, setOnSessionExpired } from '@/lib/api';
@@ -75,6 +75,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     socket.on('trip:notification', onNotification);
     return () => {
       socket.off('trip:notification', onNotification);
+    };
+  }, [state.status]);
+
+  // rezumat zilnic al documentelor de vehicul (ITP/RCA/rovinietă) — vezi vehicle-alert-checker
+  useEffect(() => {
+    if (state.status !== 'authenticated') return;
+    const socket = connectSocket();
+
+    function onVehicleAlert(raw: unknown) {
+      const parsed = vehicleAlertEventSchema.safeParse(raw);
+      if (!parsed.success) return;
+      if (parsed.data.expiredCount > 0) {
+        toast.error(parsed.data.message);
+      } else {
+        toast.warning(parsed.data.message);
+      }
+    }
+
+    socket.on('vehicle:alert', onVehicleAlert);
+    return () => {
+      socket.off('vehicle:alert', onVehicleAlert);
     };
   }, [state.status]);
 

@@ -1,3 +1,5 @@
+import { VEHICLE_DOCUMENT_SOON_THRESHOLD_DAYS } from '@fleetpilot/shared';
+
 const dateFormatter = new Intl.DateTimeFormat('ro-RO', {
   day: '2-digit',
   month: 'short',
@@ -29,14 +31,12 @@ export function toDateTimeInputValue(iso: string | null): string {
 
 export type ExpiryLevel = 'ok' | 'soon' | 'expired' | 'none';
 
-const SOON_THRESHOLD_DAYS = 30;
-
-/** ITP/RCA/rovinietă: expirat = alertă, sub 30 de zile = atenție */
+/** ITP/RCA/rovinietă: expirat = alertă, sub prag = atenție (prag comun cu verificarea de fond de pe server) */
 export function expiryLevel(iso: string | null): ExpiryLevel {
   if (!iso) return 'none';
   const days = (new Date(iso).getTime() - Date.now()) / (24 * 60 * 60 * 1000);
   if (days < 0) return 'expired';
-  if (days <= SOON_THRESHOLD_DAYS) return 'soon';
+  if (days <= VEHICLE_DOCUMENT_SOON_THRESHOLD_DAYS) return 'soon';
   return 'ok';
 }
 

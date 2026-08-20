@@ -1,5 +1,9 @@
 import { z } from 'zod';
 
+// sursă unică pt. pragul "expiră curând": dashboard-ul (client) și verificarea
+// periodică de fond (server) trebuie să considere aceeași fereastră de 30 de zile
+export const VEHICLE_DOCUMENT_SOON_THRESHOLD_DAYS = 30;
+
 export const vehicleTypeSchema = z.enum(['VAN', 'TRUCK', 'SEMI']);
 export type VehicleType = z.infer<typeof vehicleTypeSchema>;
 

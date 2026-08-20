@@ -4,5 +4,6 @@ export * from './schemas/auth';
 export * from './schemas/client';
 export * from './schemas/driver';
 export * from './schemas/realtime';
+export * from './schemas/report';
 export * from './schemas/trip';
 export * from './schemas/vehicle';
