@@ -2,13 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Bot, History, Pencil, Send, Sparkles, User, X } from 'lucide-react';
+import { Bot, ChevronRight, History, Pencil, Send, Sparkles, User, Wrench, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import type {
   AgentActionDto,
   AgentDecision,
   AgentReply,
+  AgentToolCall,
   ApproveAgentActionInput,
   ClientDto,
   DriverDto,
@@ -42,7 +43,18 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   action: AgentActionDto | null;
+  toolCalls: AgentToolCall[];
 }
+
+// numele tehnic al tool-ului (vezi server/src/agent/tools/) -> etichetă prietenoasă în trace
+const TOOL_LABELS: Record<string, string> = {
+  get_client_by_name: 'Caută clientul',
+  get_available_vehicles: 'Verifică vehicule disponibile',
+  get_available_drivers: 'Verifică șoferi disponibili',
+  calculate_route: 'Calculează ruta',
+  check_schedule_conflicts: 'Verifică conflicte de orar',
+  create_trip_draft: 'Construiește propunerea',
+};
 
 const DECISION_META: Record<
   AgentDecision,
@@ -576,6 +588,48 @@ function AgentHistoryPanel() {
   );
 }
 
+// ascuns implicit — utilitar pt. transparență/depanare, nu trebuie să aglomereze
+// conversația normală a dispecerului; util și ca dovadă vizuală în demo-uri că agentul
+// chiar interoghează date reale, nu doar generează text
+function AgentTracePanel({ toolCalls }: { toolCalls: AgentToolCall[] }) {
+  const [open, setOpen] = useState(false);
+  if (toolCalls.length === 0) return null;
+
+  return (
+    <div className="w-full rounded-lg border bg-muted/30 text-xs">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center gap-1.5 rounded-lg px-3 py-2 text-muted-foreground outline-none hover:bg-accent hover:text-accent-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+        aria-expanded={open}
+        aria-controls="agent-trace-list"
+      >
+        <ChevronRight
+          className={`size-3.5 transition-transform ${open ? 'rotate-90' : ''}`}
+          aria-hidden
+        />
+        <Wrench className="size-3.5" aria-hidden />
+        Pași agent ({toolCalls.length})
+      </button>
+      {open && (
+        <ol id="agent-trace-list" className="space-y-2 border-t px-3 py-2">
+          {toolCalls.map((call, i) => (
+            <li key={i} className="space-y-1">
+              <p className="font-medium text-foreground">
+                {TOOL_LABELS[call.name] ?? call.name}
+                <span className="ml-1.5 font-mono text-muted-foreground">{call.name}</span>
+              </p>
+              <pre className="max-h-48 overflow-auto rounded bg-background p-2 font-mono text-xs text-muted-foreground">
+                {JSON.stringify({ input: call.input, output: call.output }, null, 2)}
+              </pre>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+}
+
 function AgentMessageBubble({
   message,
   onActionChanged,
@@ -594,7 +648,7 @@ function AgentMessageBubble({
       >
         {isUser ? <User className="size-4" /> : <Bot className="size-4" />}
       </span>
-      <div className={`max-w-[85%] space-y-1 ${isUser ? 'items-end' : 'items-start'}`}>
+      <div className={`min-w-0 max-w-[85%] space-y-1 ${isUser ? 'items-end' : 'items-start'}`}>
         <div
           className={`whitespace-pre-wrap rounded-2xl px-4 py-2 text-sm ${
             isUser
@@ -607,6 +661,7 @@ function AgentMessageBubble({
         {message.action && (
           <AgentProposalCard action={message.action} onChanged={onActionChanged} />
         )}
+        {!isUser && <AgentTracePanel toolCalls={message.toolCalls} />}
       </div>
     </div>
   );
@@ -634,7 +689,13 @@ export function AgentChatPage() {
     onSuccess: (reply) => {
       setMessages((prev) => [
         ...prev,
-        { id: crypto.randomUUID(), role: 'assistant', content: reply.reply, action: reply.action },
+        {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: reply.reply,
+          action: reply.action,
+          toolCalls: reply.toolCalls,
+        },
       ]);
       if (reply.action) {
         void queryClient.invalidateQueries({ queryKey: ['agent', 'actions'] });
@@ -648,7 +709,7 @@ export function AgentChatPage() {
     if (!trimmed || mutation.isPending) return;
     setMessages((prev) => [
       ...prev,
-      { id: crypto.randomUUID(), role: 'user', content: trimmed, action: null },
+      { id: crypto.randomUUID(), role: 'user', content: trimmed, action: null, toolCalls: [] },
     ]);
     setInput('');
     mutation.mutate(trimmed);
@@ -675,7 +736,7 @@ export function AgentChatPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_300px]">
         <Card className="flex h-[70vh] flex-col gap-0 py-0">
           <div
-            className="flex-1 space-y-4 overflow-y-auto px-4 py-4"
+            className="flex-1 space-y-4 overflow-x-hidden overflow-y-auto px-4 py-4"
             aria-live="polite"
             aria-relevant="additions"
           >

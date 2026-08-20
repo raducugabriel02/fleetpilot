@@ -86,7 +86,7 @@ export async function sendMessage(
     ? await createPendingAction(companyId, userId, message, result.toolCalls, draftCall.output)
     : null;
 
-  return { reply: result.reply, action };
+  return { reply: result.reply, action, toolCalls: result.toolCalls };
 }
 
 export async function listActions(companyId: string): Promise<AgentActionDto[]> {

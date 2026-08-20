@@ -52,11 +52,21 @@ export const agentActionSchema = z.object({
 });
 export type AgentActionDto = z.infer<typeof agentActionSchema>;
 
+// un pas din bucla agentului (vezi server/src/agent/loop.ts) — input/output sunt
+// generate server-side (nu input netrusted de validat), doar afișate ca trace în UI
+export const agentToolCallSchema = z.object({
+  name: z.string(),
+  input: z.unknown(),
+  output: z.unknown(),
+});
+export type AgentToolCall = z.infer<typeof agentToolCallSchema>;
+
 // pas 1 al Fazei 4: agentul poate răspunde doar conversațional, sau conversațional + o
 // propunere structurată (dacă a apucat să cheme create_trip_draft cu succes)
 export const agentReplySchema = z.object({
   reply: z.string(),
   action: agentActionSchema.nullable(),
+  toolCalls: z.array(agentToolCallSchema),
 });
 export type AgentReply = z.infer<typeof agentReplySchema>;
 
