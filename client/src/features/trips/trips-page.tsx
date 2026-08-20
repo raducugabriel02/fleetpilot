@@ -17,7 +17,6 @@ import { CityAutocomplete } from '@/components/city-autocomplete';
 import { StatusBadge } from '@/components/status-badge';
 import { TripRouteMap } from '@/components/trip-route-map';
 import { useVehiclePosition } from './use-vehicle-position';
-import type { StatusKind } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -56,14 +55,7 @@ import { useAuth } from '@/features/auth/auth-context';
 import { apiFetch } from '@/lib/api';
 import { errorMessage } from '@/lib/errors';
 import { formatDateTime, toDateTimeInputValue } from '@/lib/format';
-
-export const TRIP_STATUS_META: Record<TripStatus, { kind: StatusKind; label: string }> = {
-  REQUEST: { kind: 'inactive', label: 'Cerere' },
-  PLANNED: { kind: 'in-service', label: 'Planificată' },
-  IN_PROGRESS: { kind: 'on-trip', label: 'În desfășurare' },
-  COMPLETED: { kind: 'available', label: 'Finalizată' },
-  CANCELLED: { kind: 'alert', label: 'Anulată' },
-};
+import { TRIP_STATUS_META } from './trip-status';
 
 /*
  * Formularul lucrează cu string-uri; validarea de format completă (fereastră,

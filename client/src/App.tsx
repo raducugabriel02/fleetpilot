@@ -1,14 +1,34 @@
+import { lazy } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/app-layout';
 import { NotFoundPage } from '@/components/not-found';
-import { AgentChatPage } from '@/features/agent/agent-chat-page';
 import { LoginPage, RegisterPage } from '@/features/auth/auth-pages';
-import { ClientsPage } from '@/features/clients/clients-page';
-import { DashboardPage } from '@/features/dashboard/dashboard-page';
-import { DriversPage } from '@/features/drivers/drivers-page';
 import { LandingPage } from '@/features/landing/landing-page';
-import { TripsPage } from '@/features/trips/trips-page';
-import { VehiclesPage } from '@/features/vehicles/vehicles-page';
+
+// public (landing/login/register/404) rămân eager — sunt primul lucru încărcat oricum.
+// paginile din /app sunt chunk-uri separate (code-splitting): un dispecer care doar
+// verifică dashboard-ul nu descarcă și harta Leaflet sau formularele de flotă degeaba.
+const AgentChatPage = lazy(() =>
+  import('@/features/agent/agent-chat-page').then((m) => ({ default: m.AgentChatPage })),
+);
+const ClientsPage = lazy(() =>
+  import('@/features/clients/clients-page').then((m) => ({ default: m.ClientsPage })),
+);
+const DashboardPage = lazy(() =>
+  import('@/features/dashboard/dashboard-page').then((m) => ({ default: m.DashboardPage })),
+);
+const DriversPage = lazy(() =>
+  import('@/features/drivers/drivers-page').then((m) => ({ default: m.DriversPage })),
+);
+const ReportsPage = lazy(() =>
+  import('@/features/reports/reports-page').then((m) => ({ default: m.ReportsPage })),
+);
+const TripsPage = lazy(() =>
+  import('@/features/trips/trips-page').then((m) => ({ default: m.TripsPage })),
+);
+const VehiclesPage = lazy(() =>
+  import('@/features/vehicles/vehicles-page').then((m) => ({ default: m.VehiclesPage })),
+);
 
 export function App() {
   return (
@@ -26,6 +46,7 @@ export function App() {
           <Route path="vehicles" element={<VehiclesPage />} />
           <Route path="drivers" element={<DriversPage />} />
           <Route path="clients" element={<ClientsPage />} />
+          <Route path="reports" element={<ReportsPage />} />
           {/* sub /app userul e deja logat — îl ducem la dashboard, nu pe 404 public */}
           <Route path="*" element={<Navigate to="/app" replace />} />
         </Route>

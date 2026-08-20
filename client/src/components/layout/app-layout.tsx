@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { Link, NavLink, Navigate, Outlet, useLocation } from 'react-router-dom';
 import {
+  BarChart3,
   Building2,
   LayoutDashboard,
   LogOut,
@@ -42,6 +43,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/app/vehicles', label: 'Vehicule', icon: Truck },
   { to: '/app/drivers', label: 'Șoferi', icon: Users },
   { to: '/app/clients', label: 'Clienți', icon: Building2 },
+  { to: '/app/reports', label: 'Rapoarte', icon: BarChart3, roles: ['ADMIN', 'DISPATCHER'] },
 ];
 
 function NavLinks({ role, onNavigate }: { role: Role; onNavigate?: () => void }) {
@@ -85,6 +87,16 @@ function Brand({ onNavigate }: { onNavigate?: () => void }) {
       </span>
       FleetPilot
     </Link>
+  );
+}
+
+function RouteSkeleton() {
+  return (
+    <div className="space-y-3">
+      <Skeleton className="h-8 w-1/3" />
+      <Skeleton className="h-4 w-full" />
+      <Skeleton className="h-4 w-2/3" />
+    </div>
   );
 }
 
@@ -176,7 +188,11 @@ export function AppLayout() {
         </header>
 
         <main className="flex-1 p-4 md:p-6">
-          <Outlet />
+          {/* fiecare pagină din /app e un chunk lazy (code-splitting pe rute) — Suspense
+              acoperă intervalul scurt de descărcare la prima navigare către ea */}
+          <Suspense fallback={<RouteSkeleton />}>
+            <Outlet />
+          </Suspense>
         </main>
       </div>
     </div>

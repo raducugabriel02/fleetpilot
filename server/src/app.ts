@@ -14,6 +14,14 @@ import { vehiclesRouter } from './routes/vehicles';
 export function createApp(): express.Express {
   const app = express();
 
+  // în producție stă mereu în spatele reverse-proxy-ului Caddy (docker-compose.prod.yml) —
+  // exact 1 hop de încredere, ca IP-ul folosit la rate limiting să fie al clientului real,
+  // nu al proxy-ului; fără asta, express-rate-limit refuză să pornească pe un X-Forwarded-For
+  // nesigur, iar în dev (fără proxy) header-ul oricum nu există
+  if (env.NODE_ENV === 'production') {
+    app.set('trust proxy', 1);
+  }
+
   // credentials: true — altfel browserul refuză cookie-ul de refresh cross-origin
   app.use(cors({ origin: env.CLIENT_ORIGIN, credentials: true }));
   app.use(express.json());

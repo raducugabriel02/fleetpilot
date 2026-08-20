@@ -1,0 +1,17 @@
+{$DOMAIN} {
+	encode gzip
+
+	# aceeași origine pt. client + API — cookie-ul httpOnly de refresh (sameSite=lax)
+	# nu ar traversa două domenii diferite; Caddy proxiază și WebSocket-ul /socket.io
+	# fără configurare suplimentară (upgrade header gestionat automat)
+	@api path /api/* /socket.io/*
+	handle @api {
+		reverse_proxy server:4000
+	}
+
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}

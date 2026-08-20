@@ -1,0 +1,62 @@
+# stack de producție (VPS): db + server + client (Caddy: static + reverse proxy + HTTPS).
+# distinct de docker-compose.yml (doar db, pentru dezvoltare locală).
+# rulare: copiază .env.example -> .env, completează valorile, apoi:
+#   docker compose -f docker-compose.prod.yml up -d --build
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: fleetpilot
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?lipsește POSTGRES_PASSWORD în .env}
+      POSTGRES_DB: fleetpilot
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U fleetpilot']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://fleetpilot:${POSTGRES_PASSWORD:?lipsește POSTGRES_PASSWORD în .env}@db:5432/fleetpilot?schema=public
+      NODE_ENV: production
+      JWT_SECRET: ${JWT_SECRET:?lipsește JWT_SECRET în .env (minim 32 caractere)}
+      # originea publică (folosită de CORS și de socket.io) — vezi PUBLIC_URL în .env.example
+      CLIENT_ORIGIN: ${PUBLIC_URL:?lipsește PUBLIC_URL în .env}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:?lipsește ANTHROPIC_API_KEY în .env}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    # HEALTHCHECK e definit în server/Dockerfile (imagine) — client-ul de mai jos
+    # așteaptă după el via condition: service_healthy
+
+  client:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    environment:
+      # numele de domeniu public (ex: fleetpilot.exemplu.ro) — Caddy obține automat HTTPS
+      # prin Let's Encrypt; pt. testare locală fără domeniu, pune DOMAIN=:80 în .env
+      DOMAIN: ${DOMAIN:?lipsește DOMAIN în .env}
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      server:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

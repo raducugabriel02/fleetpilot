@@ -7,7 +7,7 @@ import { StatusBadge } from '@/components/status-badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/features/auth/auth-context';
-import { TRIP_STATUS_META } from '@/features/trips/trips-page';
+import { TRIP_STATUS_META } from '@/features/trips/trip-status';
 import { apiFetch } from '@/lib/api';
 import { expiryLevel, formatDateTime, formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
