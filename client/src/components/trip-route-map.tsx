@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import L from 'leaflet';
 import {
   CircleMarker,
@@ -28,7 +28,11 @@ const defaultIcon = L.icon({
 
 function FitToBounds({ bounds }: { bounds: LatLngBoundsExpression }) {
   const map = useMap();
-  map.fitBounds(bounds, { padding: [32, 32] });
+  // doar la schimbarea rutei (bounds e memoizat pe trip) — altfel resetează
+  // zoom/pan-ul utilizatorului la fiecare tick al poziției live (livePosition)
+  useEffect(() => {
+    map.fitBounds(bounds, { padding: [32, 32] });
+  }, [map, bounds]);
   return null;
 }
 
@@ -50,6 +54,15 @@ export function TripRouteMap({
     return { origin, dest, route };
   }, [trip]);
 
+  const allPoints: LatLngTuple[] = useMemo(
+    () => [
+      ...(points.origin ? [points.origin] : []),
+      ...(points.dest ? [points.dest] : []),
+      ...points.route,
+    ],
+    [points],
+  );
+
   if (!points.origin && !points.dest && points.route.length === 0) {
     return (
       <div className="flex h-72 items-center justify-center rounded-md border border-dashed text-sm text-muted-foreground">
@@ -58,11 +71,6 @@ export function TripRouteMap({
     );
   }
 
-  const allPoints: LatLngTuple[] = [
-    ...(points.origin ? [points.origin] : []),
-    ...(points.dest ? [points.dest] : []),
-    ...points.route,
-  ];
   const bounds: LatLngBoundsExpression = allPoints;
 
   return (
