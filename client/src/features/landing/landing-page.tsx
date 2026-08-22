@@ -243,7 +243,7 @@ export function LandingPage() {
       </main>
 
       <footer className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-8 text-sm text-muted-foreground md:px-6">
-        <p>FleetPilot — proiect de portofoliu</p>
+        <p>FleetPilot</p>
         <p className="font-mono">v0.1</p>
       </footer>
     </div>
