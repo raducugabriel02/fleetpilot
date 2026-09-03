@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { idSchema } from '@fleetpilot/shared';
 import { prisma } from '../../lib/prisma';
 import { HttpError } from '../../middleware/error';
 import { overlappingActiveTrips, utcDay } from '../lib/schedule';
@@ -6,8 +7,8 @@ import { defineTool } from './types';
 
 const inputSchema = z
   .object({
-    vehicleId: z.cuid('Id de vehicul invalid').optional(),
-    driverId: z.cuid('Id de șofer invalid').optional(),
+    vehicleId: idSchema('Id de vehicul invalid').optional(),
+    driverId: idSchema('Id de șofer invalid').optional(),
     windowStart: z.coerce.date('windowStart invalid'),
     windowEnd: z.coerce.date('windowEnd invalid'),
   })

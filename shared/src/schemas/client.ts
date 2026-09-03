@@ -1,11 +1,11 @@
 import { z } from 'zod';
-import { phoneSchema } from './api';
+import { emailSchema, phoneSchema } from './api';
 
 export const createClientSchema = z.object({
   name: z.string().trim().min(2, 'Numele e prea scurt').max(150),
   contactName: z.string().trim().min(2, 'Numele e prea scurt').max(100).nullable().optional(),
   phone: phoneSchema.nullable().optional(),
-  email: z.email('Email invalid').nullable().optional(),
+  email: emailSchema.nullable().optional(),
   address: z.string().trim().min(3, 'Adresa e prea scurtă').max(300).nullable().optional(),
 });
 

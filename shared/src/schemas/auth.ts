@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { emailSchema } from './api';
 
 export const roleSchema = z.enum(['ADMIN', 'DISPATCHER', 'DRIVER']);
 export type Role = z.infer<typeof roleSchema>;
@@ -15,12 +16,12 @@ export const registerSchema = z.object({
     .regex(/^(RO)?\d{2,10}$|^$/, 'CUI invalid (ex: RO12345678)')
     .optional(),
   name: z.string().trim().min(2, 'Numele e prea scurt').max(100),
-  email: z.email('Email invalid'),
+  email: emailSchema,
   password: passwordSchema,
 });
 
 export const loginSchema = z.object({
-  email: z.email('Email invalid'),
+  email: emailSchema,
   password: z.string().min(1, 'Parola e obligatorie'),
 });
 

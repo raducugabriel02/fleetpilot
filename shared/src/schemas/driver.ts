@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { idParamSchema, phoneSchema } from './api';
+import { emailSchema, idParamSchema, idSchema, phoneSchema } from './api';
 import { passwordSchema } from './auth';
 
 export const licenseCategorySchema = z.enum(['B', 'BE', 'C1', 'C1E', 'C', 'CE']);
@@ -15,7 +15,7 @@ const licenseCategoriesSchema = z
 
 export const createDriverSchema = z.object({
   name: z.string().trim().min(2, 'Numele e prea scurt').max(100),
-  email: z.email('Email invalid'),
+  email: emailSchema,
   password: passwordSchema,
   phone: phoneSchema.nullable().optional(),
   licenseCategories: licenseCategoriesSchema,
@@ -52,7 +52,7 @@ export const createAbsenceSchema = z
   });
 
 export const absenceParamsSchema = idParamSchema.extend({
-  absenceId: z.cuid('Id invalid'),
+  absenceId: idSchema(),
 });
 
 export const absenceSchema = z.object({

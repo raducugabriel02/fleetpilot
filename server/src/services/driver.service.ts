@@ -115,18 +115,27 @@ export async function updateDriver(
   input: UpdateDriverInput,
 ): Promise<DriverDto> {
   const current = await findOwnedDriver(companyId, id);
-  const driver = await prisma.driver.update({
-    where: { id: current.id },
-    data: {
-      // undefined = câmp neatins; null = golit explicit (semantica PATCH)
-      phone: input.phone,
-      licenseCategories: input.licenseCategories,
-      licenseExpiresAt: input.licenseExpiresAt,
-      user: input.name === undefined ? undefined : { update: { name: input.name } },
-    },
-    include: { user: true },
-  });
-  return toDriverDto(driver);
+  try {
+    const driver = await prisma.driver.update({
+      where: { id: current.id },
+      data: {
+        // undefined = câmp neatins; null = golit explicit (semantica PATCH)
+        phone: input.phone,
+        licenseCategories: input.licenseCategories,
+        licenseExpiresAt: input.licenseExpiresAt,
+        user: input.name === undefined ? undefined : { update: { name: input.name } },
+      },
+      include: { user: true },
+    });
+    return toDriverDto(driver);
+  } catch (err) {
+    // where-ul n-are nicio gardă în afară de id — un P2025 aici nu poate însemna decât
+    // „șters concurent între citire și scriere" (fără status ON_TRIP-like la Driver)
+    if (isPrismaError(err, 'P2025')) {
+      throw new HttpError(404, 'Șoferul nu există', 'DRIVER_NOT_FOUND');
+    }
+    throw err;
+  }
 }
 
 export async function deactivateDriver(companyId: string, id: string): Promise<void> {

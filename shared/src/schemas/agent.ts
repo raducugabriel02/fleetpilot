@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { idSchema } from './api';
 
 // server-ul nu ține nicio sesiune de conversație — clientul retrimite turele anterioare
 // la fiecare mesaj nou, ca agentul să-și amintească ce a întrebat deja (ex. S2 din
@@ -73,7 +74,7 @@ export type AgentReply = z.infer<typeof agentReplySchema>;
 // suprascrieri opționale la aprobare — dispecerul poate corecta draftul înainte să confirme
 // (ex. alt vehicul decât cel propus); orice câmp lipsă rămâne cel din propunere
 export const approveAgentActionSchema = z.object({
-  clientId: z.cuid('Id de client invalid').optional(),
+  clientId: idSchema('Id de client invalid').optional(),
   originAddress: z.string().trim().min(3).max(200).optional(),
   destAddress: z.string().trim().min(3).max(200).optional(),
   cargoDescription: z.string().trim().min(2).max(300).optional(),
@@ -81,8 +82,8 @@ export const approveAgentActionSchema = z.object({
   weightTons: z.number().positive().max(60).multipleOf(0.01).optional(),
   windowStart: z.coerce.date('Dată invalidă').optional(),
   windowEnd: z.coerce.date('Dată invalidă').optional(),
-  vehicleId: z.cuid('Id de vehicul invalid').optional(),
-  driverId: z.cuid('Id de șofer invalid').optional(),
+  vehicleId: idSchema('Id de vehicul invalid').optional(),
+  driverId: idSchema('Id de șofer invalid').optional(),
 });
 export type ApproveAgentActionInput = z.infer<typeof approveAgentActionSchema>;
 

@@ -111,6 +111,12 @@ export async function updateClient(
     if (isPrismaError(err, 'P2002')) {
       throw new HttpError(409, 'Există deja un client cu acest nume', 'CLIENT_NAME_TAKEN');
     }
+    // where-ul de mai sus n-are nicio gardă în afară de id — spre deosebire de Vehicle
+    // (gardă ON_TRIP), un P2025 aici nu poate însemna decât „șters concurent între citire
+    // și scriere", deci 404, nu eroare necaptată
+    if (isPrismaError(err, 'P2025')) {
+      throw new HttpError(404, 'Clientul nu există', 'CLIENT_NOT_FOUND');
+    }
     throw err;
   }
 }
@@ -128,6 +134,10 @@ export async function deleteClient(companyId: string, id: string): Promise<void>
         'Clientul are curse înregistrate; nu poate fi șters',
         'CLIENT_HAS_TRIPS',
       );
+    }
+    // șters deja concurent (dublu-click, alt tab) — 404, nu eroare necaptată
+    if (isPrismaError(err, 'P2025')) {
+      throw new HttpError(404, 'Clientul nu există', 'CLIENT_NOT_FOUND');
     }
     throw err;
   }

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { idSchema } from './api';
 
 export const tripStatusSchema = z.enum([
   'REQUEST',
@@ -12,7 +13,7 @@ export type TripStatus = z.infer<typeof tripStatusSchema>;
 const addressSchema = z.string().trim().min(3, 'Adresa e prea scurtă').max(200);
 
 const tripDetailsSchema = z.object({
-  clientId: z.cuid('Id de client invalid'),
+  clientId: idSchema('Id de client invalid'),
   originAddress: addressSchema,
   destAddress: addressSchema,
   cargoDescription: z.string().trim().min(2, 'Descrie pe scurt marfa').max(300),
@@ -60,8 +61,8 @@ export const updateTripSchema = tripDetailsSchema
   );
 
 export const assignTripSchema = z.object({
-  vehicleId: z.cuid('Id de vehicul invalid'),
-  driverId: z.cuid('Id de șofer invalid'),
+  vehicleId: idSchema('Id de vehicul invalid'),
+  driverId: idSchema('Id de șofer invalid'),
 });
 
 // „accelerated": simulare GPS 3h -> 3min, pentru demo-uri
@@ -72,7 +73,7 @@ export const startTripSchema = z.object({
 export const listTripsQuerySchema = z
   .object({
     status: tripStatusSchema.optional(),
-    clientId: z.cuid('Id de client invalid').optional(),
+    clientId: idSchema('Id de client invalid').optional(),
     // interval pe fereastra cursei: "curse care se suprapun cu [from, to]"
     from: z.coerce.date().optional(),
     to: z.coerce.date().optional(),
