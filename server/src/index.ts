@@ -5,6 +5,10 @@ import { initSocketServer } from './realtime/socket';
 import { resumeActiveSimulations, stopAllSimulations } from './services/gps-simulator.service';
 import { startLateTripChecker, stopLateTripChecker } from './services/late-trip-checker.service';
 import {
+  startRefreshTokenCleanup,
+  stopRefreshTokenCleanup,
+} from './services/refresh-token-cleanup.service';
+import {
   startVehicleAlertChecker,
   stopVehicleAlertChecker,
 } from './services/vehicle-alert-checker.service';
@@ -18,6 +22,7 @@ httpServer.listen(env.PORT, () => {
 });
 startLateTripChecker();
 startVehicleAlertChecker();
+startRefreshTokenCleanup();
 // TICK_MS=5s dă timp clienților abia reconectați să se alăture camerei firmei
 // înainte de primul emit — nu e nevoie de o întârziere explicită de boot ca la ceilalți
 resumeActiveSimulations().catch((err: unknown) => {
@@ -28,6 +33,7 @@ resumeActiveSimulations().catch((err: unknown) => {
 function shutdown(): void {
   stopLateTripChecker();
   stopVehicleAlertChecker();
+  stopRefreshTokenCleanup();
   stopAllSimulations();
   io.close();
   httpServer.close(() => process.exit(0));
