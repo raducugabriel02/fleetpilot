@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { prisma } from '../../lib/prisma';
+import { normalizeForSearch } from '../../lib/normalize';
 import { defineTool } from './types';
 
 const inputSchema = z.object({
@@ -22,12 +23,17 @@ export const getClientByNameTool = defineTool({
     required: ['name'],
   },
   async execute(companyId, input) {
+    // dispecerul scrie des fără diacritice ("Panificatie") — `contains insensitive` din
+    // Postgres normalizează case-ul, nu diacriticele, deci filtrăm în JS (vezi normalize.ts)
+    const needle = normalizeForSearch(input.name);
     const clients = await prisma.client.findMany({
-      where: { companyId, name: { contains: input.name, mode: 'insensitive' } },
+      where: { companyId },
       orderBy: { name: 'asc' },
-      take: 5,
     });
-    return clients.map((client) => ({
+    const matches = clients
+      .filter((client) => normalizeForSearch(client.name).includes(needle))
+      .slice(0, 5);
+    return matches.map((client) => ({
       id: client.id,
       name: client.name,
       contactName: client.contactName,

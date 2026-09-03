@@ -6,6 +6,7 @@ import type {
   UpdateClientInput,
 } from '@fleetpilot/shared';
 import { prisma } from '../lib/prisma';
+import { normalizeForSearch } from '../lib/normalize';
 import { isPrismaError } from '../lib/prisma-errors';
 import { HttpError } from '../middleware/error';
 
@@ -28,19 +29,20 @@ async function findOwnedClient(companyId: string, id: string): Promise<Client> {
   return client;
 }
 
-// @@unique([companyId, name]) e case-sensitive în Postgres, dar search-ul și
-// get_client_by_name (Faza 4) caută insensitive — „AGROFRIG" lângă „Agrofrig" ar fi
-// un duplicat pe care agentul l-ar putea alege greșit. Constraint-ul rămâne backstop
-// pentru race-urile exacte (P2002); verificarea asta acoperă variantele de casing.
+// @@unique([companyId, name]) e case-sensitive ȘI diacritic-sensitive în Postgres, dar
+// search-ul și get_client_by_name (Faza 4) caută insensitiv la ambele — „AGROFRIG" sau
+// „Panificatie" (fără diacritice) lângă „Agrofrig"/„Panificație" ar fi duplicate pe care
+// agentul le-ar putea confunda (2 potriviri pentru aceeași cerere, fără cale să aleagă).
+// Constraint-ul rămâne backstop pentru race-urile exacte (P2002); verificarea asta
+// acoperă variantele de casing/diacritice, la fel ca listClients/get_client_by_name.
 async function assertNameFree(companyId: string, name: string, excludeId?: string): Promise<void> {
-  const existing = await prisma.client.findFirst({
-    where: {
-      companyId,
-      name: { equals: name, mode: 'insensitive' },
-      ...(excludeId ? { id: { not: excludeId } } : {}),
-    },
+  const needle = normalizeForSearch(name);
+  const candidates = await prisma.client.findMany({
+    where: { companyId, ...(excludeId ? { id: { not: excludeId } } : {}) },
+    select: { name: true },
   });
-  if (existing) {
+  const taken = candidates.some((c) => normalizeForSearch(c.name) === needle);
+  if (taken) {
     throw new HttpError(409, 'Există deja un client cu acest nume', 'CLIENT_NAME_TAKEN');
   }
 }
@@ -49,14 +51,19 @@ export async function listClients(
   companyId: string,
   query: ListClientsQuery,
 ): Promise<ClientDto[]> {
+  // filtrare în JS, nu `contains` la nivel de Postgres: `mode: 'insensitive'` normalizează
+  // doar case-ul, nu diacriticele ("Panificatie" nu ar găsi "Panificație" din DB). Volum
+  // mic pe scara firmelor țintă (2-20 camioane => zeci de clienți), deci acceptabil —
+  // același raționament ca agregarea in-memory din report.service.ts.
   const clients = await prisma.client.findMany({
-    where: {
-      companyId,
-      ...(query.search ? { name: { contains: query.search, mode: 'insensitive' } } : {}),
-    },
+    where: { companyId },
     orderBy: { name: 'asc' },
   });
-  return clients.map(toClientDto);
+  if (!query.search) return clients.map(toClientDto);
+  const needle = normalizeForSearch(query.search);
+  return clients
+    .filter((client) => normalizeForSearch(client.name).includes(needle))
+    .map(toClientDto);
 }
 
 export async function getClient(companyId: string, id: string): Promise<ClientDto> {
