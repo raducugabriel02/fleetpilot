@@ -386,6 +386,8 @@ export async function startTrip(
         route: routeGeometrySchema.parse(trip.routeGeometry),
         durationMin: trip.durationMin,
         accelerated,
+        // mereu setat aici (tocmai scris în update-ul de mai sus) — fallback doar pt. tipul strict Date | null
+        startedAt: trip.startedAt ?? new Date(),
       });
     }
     return toTripDto(trip);

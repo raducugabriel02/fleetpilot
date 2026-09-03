@@ -2,7 +2,7 @@ import { createServer } from 'node:http';
 import { createApp } from './app';
 import { env } from './lib/env';
 import { initSocketServer } from './realtime/socket';
-import { stopAllSimulations } from './services/gps-simulator.service';
+import { resumeActiveSimulations, stopAllSimulations } from './services/gps-simulator.service';
 import { startLateTripChecker, stopLateTripChecker } from './services/late-trip-checker.service';
 import {
   startVehicleAlertChecker,
@@ -18,6 +18,11 @@ httpServer.listen(env.PORT, () => {
 });
 startLateTripChecker();
 startVehicleAlertChecker();
+// TICK_MS=5s dă timp clienților abia reconectați să se alăture camerei firmei
+// înainte de primul emit — nu e nevoie de o întârziere explicită de boot ca la ceilalți
+resumeActiveSimulations().catch((err: unknown) => {
+  console.error('[gps-simulator] eroare la resume-ul curselor în desfășurare:', err);
+});
 
 // altfel conexiunile socket țin portul ocupat după SIGTERM (docker stop, restart tsx watch)
 function shutdown(): void {

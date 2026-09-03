@@ -1,4 +1,4 @@
-import type { RouteGeometry } from '@fleetpilot/shared';
+import { routeGeometrySchema, type RouteGeometry } from '@fleetpilot/shared';
 import { prisma } from '../lib/prisma';
 import { companyRoom, getIo } from '../realtime/socket';
 
@@ -9,6 +9,10 @@ export interface SimulationParams {
   route: RouteGeometry;
   durationMin: number;
   accelerated: boolean;
+  // momentul real la care a pornit cursa — de la o pornire nouă e ~acum (elapsed ~0),
+  // dar la resume după un restart de server e `trip.startedAt` din DB, ca poziția să
+  // reia de unde ar fi fost, nu de la kilometrul 0
+  startedAt: Date;
 }
 
 const TICK_MS = 5_000;
@@ -101,7 +105,13 @@ export function startSimulation(params: SimulationParams): void {
   // timp simulat petrecut EFECTIV conducând (exclude pauzele) — poziția se calculează
   // din asta, nu din timpul real scurs, altfel vehiculul ar continua să avanseze pe
   // rută în timpul unei „pauze de șofer" (doar viteza afișată ar fi 0)
-  let drivingElapsedSimMs = 0;
+  //
+  // la o pornire nouă `startedAt` e practic acum, deci elapsed ~0; la resume după un
+  // restart de server aproximăm elapsed din timpul real scurs de la pornirea reală a
+  // cursei — pauzele dinaintea restart-ului se pierd (nu sunt persistate), acceptabil:
+  // subestimăm ușor progresul, nu-l suprasestimăm niciodată
+  const elapsedRealMs = Math.max(0, Date.now() - params.startedAt.getTime());
+  let drivingElapsedSimMs = Math.min(elapsedRealMs * speedup, totalSimDurationMs);
   let breakRemainingSimMs = 0;
 
   const timer = setInterval(() => {
@@ -184,4 +194,49 @@ export function stopAllSimulations(): void {
     clearInterval(timer);
   }
   activeSimulations.clear();
+}
+
+/**
+ * apelată o singură dată la boot: `activeSimulations` trăiește doar în memorie, deci
+ * orice restart de server (deploy, `tsx watch` reload, crash) lasă cursele `IN_PROGRESS`
+ * fără poziții GPS la nesfârșit, cu nicio cale de recuperare — resume-ul reconstituie
+ * bucla din `startedAt` persistat în DB (vezi calculul lui `drivingElapsedSimMs`).
+ *
+ * mereu la viteză normală (`accelerated: false`): modul accelerat e doar pentru demo-uri
+ * scurte (minute) — o cursă accelerată n-ar supraviețui realist până la un restart, iar
+ * persistarea flag-ului doar pentru acest caz rar n-ar justifica o coloană nouă în schema.
+ *
+ * presupune o singură instanță de server (target-ul de deploy din CLAUDE.md e un VPS cu
+ * Docker Compose, nu un cluster) — mai multe replici ar porni fiecare propria simulare
+ * pentru aceeași cursă (poziții + emit-uri duble). De reconsiderat dacă apare scalare orizontală.
+ */
+export async function resumeActiveSimulations(): Promise<void> {
+  // fără filtru companyId aici — job de bootstrap global, nu request per-tenant;
+  // izolarea multi-tenant se păstrează la emit, prin companyRoom(trip.companyId)
+  const orphaned = await prisma.trip.findMany({
+    where: { status: 'IN_PROGRESS' },
+    select: {
+      id: true,
+      companyId: true,
+      vehicleId: true,
+      routeGeometry: true,
+      durationMin: true,
+      startedAt: true,
+    },
+  });
+
+  for (const trip of orphaned) {
+    if (!trip.vehicleId || !trip.routeGeometry || !trip.durationMin || !trip.startedAt) continue;
+    const route = routeGeometrySchema.safeParse(trip.routeGeometry);
+    if (!route.success) continue;
+    startSimulation({
+      tripId: trip.id,
+      companyId: trip.companyId,
+      vehicleId: trip.vehicleId,
+      route: route.data,
+      durationMin: trip.durationMin,
+      accelerated: false,
+      startedAt: trip.startedAt,
+    });
+  }
 }
