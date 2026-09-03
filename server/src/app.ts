@@ -1,7 +1,9 @@
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
+import pinoHttp from 'pino-http';
 import { env } from './lib/env';
+import { logger } from './lib/logger';
 import { errorHandler, notFoundHandler } from './middleware/error';
 import { agentRouter } from './routes/agent';
 import { authRouter } from './routes/auth';
@@ -22,6 +24,20 @@ export function createApp(): express.Express {
   if (env.NODE_ENV === 'production') {
     app.set('trust proxy', 1);
   }
+
+  // fără redact, serializerele implicite pino-http/pino-std-serializers loghează
+  // req.headers ȘI res.headers COMPLET la fiecare request, la nivel info — asta ar scurge
+  // Authorization (Bearer access token) și cookie-ul refreshToken (httpOnly, dar nu și
+  // față de propriile log-uri) în clar, în producție, pe fiecare linie de log
+  app.use(
+    pinoHttp({
+      logger,
+      redact: {
+        paths: ['req.headers.authorization', 'req.headers.cookie', 'res.headers["set-cookie"]'],
+        remove: true,
+      },
+    }),
+  );
 
   // credentials: true — altfel browserul refuză cookie-ul de refresh cross-origin
   app.use(cors({ origin: env.CLIENT_ORIGIN, credentials: true }));

@@ -1,3 +1,4 @@
+import { logger } from '../lib/logger';
 import { prisma } from '../lib/prisma';
 
 const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
@@ -17,7 +18,7 @@ async function cleanupExpiredRefreshTokens(): Promise<void> {
     },
   });
   if (count > 0) {
-    console.log(`[refresh-token-cleanup] șters ${count} token(uri) expirate/revocate`);
+    logger.info({ count }, '[refresh-token-cleanup] token-uri expirate/revocate șterse');
   }
 }
 
@@ -25,7 +26,7 @@ let timer: NodeJS.Timeout | null = null;
 
 function runCleanup(): void {
   cleanupExpiredRefreshTokens().catch((err: unknown) => {
-    console.error('[refresh-token-cleanup] eroare la curățare:', err);
+    logger.error({ err }, '[refresh-token-cleanup] eroare la curățare');
   });
 }
 

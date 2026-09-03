@@ -21,7 +21,7 @@ export function notFoundHandler(req: Request, res: Response<ApiError>): void {
 
 export function errorHandler(
   err: unknown,
-  _req: Request,
+  req: Request,
   res: Response<ApiError>,
   _next: NextFunction,
 ): void {
@@ -42,6 +42,8 @@ export function errorHandler(
     });
     return;
   }
-  console.error(err);
+  // req.log (pino-http) leagă log-ul de request-id-ul deja emis pentru acest răspuns,
+  // spre deosebire de logger-ul global — util să corelezi eroarea cu restul cererii în agregator
+  req.log.error({ err }, 'eroare necaptată');
   res.status(500).json({ error: { message: 'Eroare internă', code: 'INTERNAL' } });
 }

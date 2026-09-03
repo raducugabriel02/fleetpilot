@@ -1,4 +1,5 @@
 import { routeGeometrySchema, type RouteGeometry } from '@fleetpilot/shared';
+import { logger } from '../lib/logger';
 import { prisma } from '../lib/prisma';
 import { companyRoom, getIo } from '../realtime/socket';
 
@@ -116,7 +117,7 @@ export function startSimulation(params: SimulationParams): void {
 
   const timer = setInterval(() => {
     tick().catch((err: unknown) => {
-      console.error(`[gps-simulator] eroare la tick pentru cursa ${params.tripId}:`, err);
+      logger.error({ err, tripId: params.tripId }, '[gps-simulator] eroare la tick');
     });
   }, TICK_MS);
   activeSimulations.set(params.tripId, timer);

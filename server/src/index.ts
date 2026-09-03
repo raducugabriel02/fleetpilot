@@ -1,6 +1,7 @@
 import { createServer } from 'node:http';
 import { createApp } from './app';
 import { env } from './lib/env';
+import { logger } from './lib/logger';
 import { initSocketServer } from './realtime/socket';
 import { resumeActiveSimulations, stopAllSimulations } from './services/gps-simulator.service';
 import { startLateTripChecker, stopLateTripChecker } from './services/late-trip-checker.service';
@@ -18,7 +19,7 @@ const httpServer = createServer(app);
 const io = initSocketServer(httpServer);
 
 httpServer.listen(env.PORT, () => {
-  console.log(`API pornit pe http://localhost:${env.PORT}`);
+  logger.info(`API pornit pe http://localhost:${env.PORT}`);
 });
 startLateTripChecker();
 startVehicleAlertChecker();
@@ -26,7 +27,7 @@ startRefreshTokenCleanup();
 // TICK_MS=5s dă timp clienților abia reconectați să se alăture camerei firmei
 // înainte de primul emit — nu e nevoie de o întârziere explicită de boot ca la ceilalți
 resumeActiveSimulations().catch((err: unknown) => {
-  console.error('[gps-simulator] eroare la resume-ul curselor în desfășurare:', err);
+  logger.error({ err }, '[gps-simulator] eroare la resume-ul curselor în desfășurare');
 });
 
 // altfel conexiunile socket țin portul ocupat după SIGTERM (docker stop, restart tsx watch)

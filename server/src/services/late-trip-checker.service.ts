@@ -1,3 +1,4 @@
+import { logger } from '../lib/logger';
 import { prisma } from '../lib/prisma';
 import { routeLabel } from '../lib/route-label';
 import { companyRoom, getIo } from '../realtime/socket';
@@ -40,7 +41,7 @@ export function startLateTripChecker(): void {
   if (timer) return;
   timer = setInterval(() => {
     checkLateTrips().catch((err: unknown) => {
-      console.error('[late-trip-checker] eroare la verificare:', err);
+      logger.error({ err }, '[late-trip-checker] eroare la verificare');
     });
   }, CHECK_INTERVAL_MS);
 }

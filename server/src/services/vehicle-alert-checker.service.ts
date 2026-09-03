@@ -1,4 +1,5 @@
 import { VEHICLE_DOCUMENT_SOON_THRESHOLD_DAYS } from '@fleetpilot/shared';
+import { logger } from '../lib/logger';
 import { prisma } from '../lib/prisma';
 import { companyRoom, getIo } from '../realtime/socket';
 
@@ -69,7 +70,7 @@ let interval: NodeJS.Timeout | null = null;
 
 function runCheck(): void {
   checkExpiringDocuments().catch((err: unknown) => {
-    console.error('[vehicle-alert-checker] eroare la verificare:', err);
+    logger.error({ err }, '[vehicle-alert-checker] eroare la verificare');
   });
 }
 
