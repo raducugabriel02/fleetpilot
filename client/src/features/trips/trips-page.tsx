@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -34,7 +34,9 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -475,8 +477,19 @@ function TripActionDialog({
 }) {
   const queryClient = useQueryClient();
   const meta = pending ? ACTION_META[pending.action] : null;
+  // relevant doar pt. 'start' — reset la fiecare deschidere/schimbare de cursă, ca
+  // alegerea de la o cursă anterioară să nu „scape" din greșeală pe următoarea
+  const [accelerated, setAccelerated] = useState(false);
+  useEffect(() => {
+    setAccelerated(false);
+  }, [pending]);
+
   const mutation = useMutation({
-    mutationFn: (trip: TripDto) => apiFetch<void>(meta!.path(trip.id), { method: meta!.method }),
+    mutationFn: (trip: TripDto) =>
+      apiFetch<void>(meta!.path(trip.id), {
+        method: meta!.method,
+        body: pending?.action === 'start' ? { accelerated } : undefined,
+      }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['trips'] });
       toast.success(meta!.successMessage);
@@ -494,6 +507,18 @@ function TripActionDialog({
             {pending && meta ? meta.description(pending.trip) : null}
           </DialogDescription>
         </DialogHeader>
+        {pending?.action === 'start' && (
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="trip-start-accelerated"
+              checked={accelerated}
+              onCheckedChange={(checked) => setAccelerated(checked === true)}
+            />
+            <Label htmlFor="trip-start-accelerated" className="font-normal text-muted-foreground">
+              Mod accelerat (demo — cursa simulată în minute, nu în ore)
+            </Label>
+          </div>
+        )}
         <DialogFooter>
           <Button variant="outline" onClick={onOpenChange}>
             Renunță
