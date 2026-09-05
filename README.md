@@ -21,6 +21,28 @@ Dispecerul AI din FleetPilot e construit pe un principiu strict: **agentul propu
 - **Notificări**: cursă întârziată sau finalizată, alertă zilnică pe documente de vehicul expirate/pe cale să expire — toate prin Socket.io, izolate per firmă.
 - **Raport lunar**: curse finalizate, km parcurși, procent la timp, top clienți, utilizare vehicule.
 
+## Cum funcționează dispecerul AI
+
+1. Dispecerul scrie liber, în română: „transport 4 paleți Oltenița → Constanța, joi dimineața, client Agrofrig".
+2. Modelul (Claude, buclă de tool use scrisă manual în `agent/loop.ts`, nu SDK black-box) decide singur ce tool-uri apelează și în ce ordine — nu e un flow hardcodat:
+   - `get_client_by_name` — găsește clientul (căutare diacritic-insensitivă)
+   - `get_available_vehicles` / `get_available_drivers` — filtrează pe capacitate, fereastra cerută și absențe
+   - `calculate_route` — distanță/durată reale via OSRM
+   - `check_schedule_conflicts` — verifică suprapuneri cu alte curse
+   - `create_trip_draft` — **nu scrie nimic în bază de date**, doar validează și întoarce un draft
+3. Fiecare apel de tool și rezultatul lui rămân vizibile în chat, într-un panou colapsabil „Pași agent" — dispecerul poate verifica raționamentul, nu doar concluzia.
+4. Dacă draftul e valid, apare un card de propunere cu justificare scurtă și trei acțiuni: **Aprobă** / **Modifică** (formular inline) / **Respinge**. Nimic nu se creează fără unul din aceste click-uri.
+5. La aprobare, cursa trece prin **exact aceleași servicii** folosite de restul aplicației (`trip.service.createTrip`/`assignTrip`) — draftul agentului e doar o pre-verificare informativă; verificarea reală (capacitate, conflicte de orar, absențe) rulează din nou, într-o tranzacție Serializable, chiar la momentul aprobării.
+6. Fiecare decizie — aprobat, modificat sau respins — se loghează în `AgentAction`: ce a propus agentul, ce a decis dispecerul, când.
+7. Cazuri de margine tratate explicit: date incomplete → agentul întreabă, nu ghicește; niciun vehicul disponibil → propune altă dată; fereastră de timp clar în trecut → tool-ul o respinge și cere confirmare, ca să nu treacă neobservată într-un draft altfel valid.
+
+## Cum funcționează harta live
+
+- La pornirea unei curse, traseul e geometria reală întoarsă de OSRM (nu linie dreaptă între origine și destinație).
+- La fiecare 5 secunde reale, poziția vehiculului avansează pe acest traseu — interpolare haversine + calcul de bearing pentru direcție — cu viteză variabilă și pauze aleatorii de șofer. Modul „accelerat" comprimă o cursă de ore în câteva minute, pentru demo-uri.
+- Poziția se emite prin Socket.io într-o cameră izolată per firmă (`company:{companyId}`) și se scrie în `VehiclePosition` pentru istoric.
+- La restart de server, simulările curselor `IN_PROGRESS` se reiau automat din starea reală a cursei — nicio cursă nu rămâne „orfană" doar pentru că serverul a repornit.
+
 ## Stack tehnic
 
 | Zonă         | Tehnologie                                                                 |
