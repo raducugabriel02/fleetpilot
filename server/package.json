@@ -8,7 +8,8 @@
     "typecheck": "tsc --noEmit",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "prisma:seed": "tsx prisma/seed.ts"
+    "prisma:seed": "tsx prisma/seed.ts",
+    "eval:agent": "tsx src/agent/eval/run.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",
